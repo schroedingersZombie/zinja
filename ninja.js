@@ -31,7 +31,7 @@ http.get(ninjaUrl + '?name=' + args[0], function(response) {
 
 function executeScript() {
   var bashArgs = args.slice(1).join(' ');
-  var command = 'bash ./temp.ninja ' + bashArgs;
+  var command = 'source ./temp.ninja ' + bashArgs;
 
   childProcess.exec(command, function(err, stdout, stderr) {
     if(err !== null) {
