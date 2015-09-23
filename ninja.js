@@ -4,24 +4,14 @@ var http = require('http');
 var fs = require('fs');
 var childProcess = require('child_process');
 
+//Cut off 'node' and 'ninja.js' from the arguments
 var args = process.argv.slice(2);
 
 var ninjaUrl = 'http://localhost:2313/api/scripts';
 
-function executeScript() {
-  var bashArgs = args.slice(1).join(' ');
-  var command = 'bash ./temp.ninja ' + bashArgs;
-
-  childProcess.exec(command, function(err, stdout, stderr) {
-    if(err !== null) {
-      console.error(stderr);
-      return;
-    }
-
-    console.log(stdout);
-
-    fs.unlink('./temp.ninja');
-  });
+if(args.length == 0) {
+  console.log('Usage: ninja [command]');
+  process.exit(1);
 }
 
 http.get(ninjaUrl + '?name=' + args[0], function(response) {
@@ -38,3 +28,19 @@ http.get(ninjaUrl + '?name=' + args[0], function(response) {
 
   tempFile.on('finish', executeScript);
 });
+
+function executeScript() {
+  var bashArgs = args.slice(1).join(' ');
+  var command = 'bash ./temp.ninja ' + bashArgs;
+
+  childProcess.exec(command, function(err, stdout, stderr) {
+    if(err !== null) {
+      console.error(stderr);
+      return;
+    }
+
+    console.log(stdout);
+
+    fs.unlink('./temp.ninja');
+  });
+}
