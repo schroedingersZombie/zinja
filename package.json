@@ -23,5 +23,9 @@
   "bugs": {
     "url": "https://github.com/LionC/shell-ninja/issues"
   },
-  "homepage": "https://github.com/LionC/shell-ninja#readme"
+  "homepage": "https://github.com/LionC/shell-ninja#readme",
+  "preferGlobal": true,
+  "bin": {
+    "ninja": "ninja.js"
+  }
 }
