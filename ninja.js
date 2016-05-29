@@ -7,8 +7,8 @@ var core = require('./lib/ninja-core');
 
 program
     .version('0.1.0')
-    .arguments('[options] <cmd> [command-arguments...]')
-    .usage('[options] <command> [arguments...]');
+    .arguments('<cmd> [command-arguments...]')
+    .usage('<command> [arguments...]');
 
 program
     .command('* [command-arguments...]')
@@ -25,8 +25,18 @@ program
     .description('Deletes the given script from the local repository')
     .action(core.unregister);
 
+program
+    .command('publish <name> <file>')
+    .description('Publishes the given script to the central soke repository')
+    .action(core.publish);
+
+program
+    .command('search <query>')
+    .description('Searches the central soke repository for scripts matching the query')
+    .action(core.search);
 
 program.parse(process.argv);
 
-
-//core(args);
+if (!process.argv.slice(2).length) {
+    program.outputHelp();
+}
