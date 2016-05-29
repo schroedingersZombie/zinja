@@ -26,5 +26,9 @@
   "preferGlobal": true,
   "bin": {
     "ninja": "ninja.js"
+  },
+  "dependencies": {
+    "commander": "^2.9.0",
+    "request": "^2.72.0"
   }
 }

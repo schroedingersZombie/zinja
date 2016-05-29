@@ -1,46 +1,26 @@
 #! /usr/bin/env node
 
-var http = require('http');
-var fs = require('fs');
-var childProcess = require('child_process');
+var program = require('commander');
 
-//Cut off 'node' and 'ninja.js' from the arguments
-var args = process.argv.slice(2);
+var core = require('./lib/ninja-core');
 
-var ninjaUrl = 'http://localhost:2313/api/scripts';
 
-if(args.length == 0) {
-  console.log('Usage: ninja [command]');
-  process.exit(1);
-}
+program
+    .version('0.1.0')
+    .arguments('[options] <cmd> [command-arguments...]')
+    .usage('[options] <command> [arguments...]');
 
-http.get(ninjaUrl + '?name=' + args[0], function(response) {
-  if(response.statusCode != 200) {
-    console.error('Error:');
+program
+    .command('* [command-arguments...]')
+    .description('Execute the soke script * (for example \'soke hello-world\' will execute the hello-world script)')
+    .action(core.execute);
 
-    response.on('data', console.error);
+program
+    .command('register <name> <file>')
+    .description('Register the script passed as file under the given name in the soke repository')
+    .action(core.register);
 
-    return;
-  }
+program.parse(process.argv);
 
-  var tempFile = fs.createWriteStream('./temp.ninja');
-  response.pipe(tempFile);
 
-  tempFile.on('finish', executeScript);
-});
-
-function executeScript() {
-  var bashArgs = args.slice(1).join(' ');
-  var command = 'source ./temp.ninja ' + bashArgs;
-
-  childProcess.exec(command, function(err, stdout, stderr) {
-    if(err !== null) {
-      console.error(stderr);
-      return;
-    }
-
-    console.log(stdout);
-
-    fs.unlink('./temp.ninja');
-  });
-}
+//core(args);
