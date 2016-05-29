@@ -31,12 +31,21 @@ program
     .action(core.publish);
 
 program
+    .command('republish <name> <file>')
+    .description('Republishes (updates) the given script to the central soke repository')
+    .action(toBeImplemented);
+
+program
     .command('search <query>')
     .description('Searches the central soke repository for scripts matching the query')
     .action(core.search);
 
 program.parse(process.argv);
 
-if (!process.argv.slice(2).length) {
+function toBeImplemented() {
+    console.log('To be implemented');
+}
+
+if(!process.argv.slice(2).length) {
     program.outputHelp();
 }
