@@ -17,8 +17,14 @@ program
 
 program
     .command('register <name> <file>')
-    .description('Register the script passed as file under the given name in the soke repository')
+    .description('Registers a script in the local repository')
     .action(core.register);
+
+program
+    .command('unregister <name>')
+    .description('Deletes the given script from the local repository')
+    .action(core.unregister);
+
 
 program.parse(process.argv);
 
