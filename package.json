@@ -1,7 +1,7 @@
 {
-  "name": "shell-ninja",
+  "name": "soke",
   "version": "0.1.0",
-  "description": "A command line tool to execute shell scripts from a central registry by alias",
+  "description": "A command line tool to execute or publish shell scripts from and to the central soke repository or your local system.",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -10,12 +10,11 @@
     "url": "git+https://github.com/LionC/shell-ninja.git"
   },
   "keywords": [
-    "ninja",
+    "soke",
     "shell",
     "bash",
-    "install",
-    "ilu",
-    "lionc"
+    "script",
+    "repository"
   ],
   "author": "LionC <lionc@ilu.st>",
   "license": "MIT",
@@ -25,7 +24,8 @@
   "homepage": "https://github.com/LionC/shell-ninja#readme",
   "preferGlobal": true,
   "bin": {
-    "ninja": "ninja.js"
+    "soke": "soke.js",
+    "sk": "soke.js"
   },
   "dependencies": {
     "commander": "^2.9.0",
