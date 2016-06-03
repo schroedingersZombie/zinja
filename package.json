@@ -2,13 +2,7 @@
   "name": "soke",
   "version": "0.1.0",
   "description": "A command line tool to execute or publish shell scripts from and to the central soke repository or your local system.",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/LionC/shell-ninja.git"
-  },
+  "repository": "LionC/shell-ninja",
   "keywords": [
     "soke",
     "shell",
@@ -16,12 +10,12 @@
     "script",
     "repository"
   ],
-  "author": "LionC <lionc@ilu.st>",
-  "license": "MIT",
+  "author": "Leon Strauss <me@lionc.de> (lionc.de)",
+  "license": "GPL-3.0+",
   "bugs": {
     "url": "https://github.com/LionC/shell-ninja/issues"
   },
-  "homepage": "https://github.com/LionC/shell-ninja#readme",
+  "homepage": "http://soke.io",
   "preferGlobal": true,
   "bin": {
     "soke": "soke.js",

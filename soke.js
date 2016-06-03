@@ -1,12 +1,13 @@
 #! /usr/bin/env node
 
-var program = require('commander');
-var request = require('request');
 var fs = require('fs');
 var childProcess = require('child_process');
+var basename = require('path').basename;
+
+var program = require('commander');
+var request = require('request');
 var inquirer = require('inquirer');
 var cache = require('persistent-cache');
-var basename = require('path').basename;
 
 var name = basename(process.argv[1], '.js');
 
