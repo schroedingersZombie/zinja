@@ -57,6 +57,11 @@ program
     .description('Searches the central soke repository for scripts matching the query')
     .action(search);
 
+program
+    .command('info <name>')
+    .description('Shows the source of and other available information on the specified script')
+    .action(info);
+
 program.parse(process.argv);
 
 function toBeImplemented() {
@@ -96,21 +101,46 @@ function execute(args) {
 }
 
 function fetchAndExecuteRemoteScript(name, args) {
+    fetchRemoteScript(name, function(err, script) {
+        if(err != null) {
+            process.exit(1);
+        }
+
+        executeScript(script, args);
+    });
+}
+
+function fetchRemoteScript(name, cb) {
     request.get(scriptsEndpoint + '?name=' + name, function(err, response, body) {
         if(err != null)
             return onConnectionProblem();
 
         if(response.statusCode != 200) {
             if(response.statusCode == 404) {
-                return console.error('Script ' + name + ' was not found in the central soke repository. Try ' + name + ' search ' + name);
+                console.error('Script ' + name + ' was not found in the central soke repository. Try ' + name + ' search ' + name);
+                cb(404);
             }
 
-            return console.error(response.statusCode);
+            //TODO: So something better with the error
+            return cb(response.statusCode);
         }
 
         remoteCache.put(name, body, function(err) {});
 
-        executeScript(body, args);
+        cb(null, body);
+    });
+}
+
+function info(name) {
+    fetchRemoteScript(name, function(err, script) {
+        if(err != null) {
+            process.exit(1);
+        }
+
+        console.log('Script ' + name + ' source:');
+        console.log('----------');
+        console.log(script);
+        console.log('----------');
     });
 }
 
