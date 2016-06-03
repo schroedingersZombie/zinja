@@ -15,7 +15,7 @@ var scriptsEndpoint = 'http://localhost:1718/api/scripts';
 var searchEndpoint = 'http://localhost:1718/api/search';
 
 var localScripts = cache({
-    dir: 'local'
+    name: 'local'
 });
 
 var remoteCache = cache({
