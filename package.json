@@ -24,6 +24,7 @@
   "dependencies": {
     "commander": "^2.9.0",
     "inquirer": "^1.0.2",
+    "persistent-cache": "^0.1.0",
     "request": "^2.72.0"
   }
 }
