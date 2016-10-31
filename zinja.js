@@ -8,11 +8,11 @@ var program = require('commander');
 var request = require('request');
 var inquirer = require('inquirer');
 var cache = require('persistent-cache');
+var temp = require('temp').track();
 
 var name = basename(process.argv[1], '.js');
 
 var scriptsEndpoint = 'http://localhost:1718/api/scripts';
-var searchEndpoint = 'http://localhost:1718/api/search';
 
 var localScripts = cache({
     name: 'local'
@@ -77,41 +77,55 @@ function onConnectionProblem() {
     process.exit(1);
 }
 
+function fetchScript(name, cb) {
+    localScripts.get(name, onLocalCache);
+
+    function onLocalCache(err, script) {
+        if(err != null) {
+            return cb(err);
+        }
+
+        if(script === undefined)
+            return remoteCache.get(name, onRemoteCache);
+
+        return cb(null, script);
+    }
+
+    function onRemoteCache(err, script) {
+        if(err) {
+            return cb(err);
+        }
+
+        if(script === undefined)
+            return fetchRemoteScript(name, onRemote);
+
+        return cb(null, script);
+    }
+
+    function onRemote(err, script) {
+        if(err != null) {
+            return cb(err);
+        }
+
+        return cb(null, script);
+    }
+}
+
 function execute(args) {
     var name = args[0];
     var args = args.slice(1);
 
-    localScripts.get(name, onLocalCache);
-
-    function onLocalCache(notFound, script) {
-        if(notFound) {
-            return remoteCache.get(name, onRemoteCache);
-        }
-
-        return executeScript(script, args);
-    }
-
-    function onRemoteCache(notFound, script) {
-        if(notFound) {
-            return fetchAndExecuteRemoteScript(name, args);
-        }
-
-        return executeScript(script, args);
-    }
-}
-
-function fetchAndExecuteRemoteScript(name, args) {
-    fetchRemoteScript(name, function(err, script) {
+    fetchScript(name, function(err, script) {
         if(err != null) {
-            process.exit(1);
+            return process.exit(1);
         }
 
-        executeScript(script, args);
+        return executeScript(script, args);
     });
 }
 
 function fetchRemoteScript(name, cb) {
-    request.get(scriptsEndpoint + '?name=' + name, function(err, response, body) {
+    request.get(scriptsEndpoint + '/' + name, function(err, response, body) {
         if(err != null)
             return onConnectionProblem();
 
@@ -132,7 +146,7 @@ function fetchRemoteScript(name, cb) {
 }
 
 function info(name) {
-    fetchRemoteScript(name, function(err, script) {
+    fetchScript(name, function(err, script) {
         if(err != null) {
             process.exit(1);
         }
@@ -145,7 +159,12 @@ function info(name) {
 }
 
 function executeScript(script, args) {
-    fs.writeFile('./temp.ninja', script, onFileWritten);
+    var tempFilePath = '';
+
+    temp.open('soke', function tempFileCreated(err, tmpFile) {
+        tempFilePath = tmpFile.path;
+        fs.write(tmpFile.fd, script, onFileWritten);
+    });
 
     function onFileWritten(err) {
         if(err != null) {
@@ -154,7 +173,7 @@ function executeScript(script, args) {
         }
 
         var bashArgs = args.join(' ');
-        var command = 'source ./temp.ninja ' + bashArgs;
+        var command = 'source ' + tempFilePath + ' ' + bashArgs;
 
         var child = childProcess.exec(command);
 
@@ -162,14 +181,12 @@ function executeScript(script, args) {
         child.stderr.pipe(process.stderr);
 
         child.on('close', function(exitCode) {
-            fs.unlink('./temp.ninja');
             process.exit(exitCode);
         });
 
         child.on('error', function() {
-            fs.unlink('./temp.ninja');
             process.exit(1);
-        })
+        });
     }
 }
 
@@ -264,7 +281,7 @@ function publish(name, fileName) {
 
 function search(query) {
     request.get({
-        uri: searchEndpoint,
+        uri: scriptsEndpoint,
         method: 'GET',
         qs: {
             q: query
