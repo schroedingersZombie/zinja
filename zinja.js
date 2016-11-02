@@ -12,7 +12,7 @@ var temp = require('temp').track();
 
 var name = basename(process.argv[1], '.js');
 
-var scriptsEndpoint = 'http://localhost:1718/api/scripts';
+var scriptsEndpoint = 'http://localhost:8080/scripts';
 
 var localScripts = cache({
     name: 'local'
@@ -230,40 +230,46 @@ function publish(name, fileName) {
         process.exit(1);
     }
 
-    var email = '';
-
     inquirer.prompt([{
-        message: 'Please enter an email address to be used to maintain this script in the future',
-        name: 'email',
-        validate: function(input) {
-            return input.indexOf('@') != -1;
-        }
+        message: 'Enter the name the script should be published under:',
+        name: 'name',
+        type: 'input'
     }, {
-        type: 'confirm',
-        message: 'Are you sure this email address is correct? It is the only way to maintain the script',
-        name: 'confirmation'
+        message: 'Repeat the name for the script:',
+        name: 'nameRepeat',
+        type: 'input'
+    }, {
+        message: 'Enter your username (if you haven\'t one yet, run zj register-new-user):',
+        name: 'user',
+        type: 'input'
+    }, {
+        message: 'Enter your password:',
+        name: 'password',
+        type: 'password'
     }]).then(function(answers) {
-        if(answers.confirmation)
-            fs.readFile(fileName, 'utf8', onFileRead);
-    });
+        fs.readFile(fileName, 'utf8', onFileRead);
 
-    function onFileRead(err, content) {
-        if(err != null) {
-            console.error('Could not read file ' + fileName);
-            process.exit(1);
+        function onFileRead(err, content) {
+            if(err != null) {
+                console.error('Could not read file ' + fileName);
+                process.exit(1);
+            }
+
+            request({
+                body: {
+                    name: name,
+                    script: content
+                },
+                uri: scriptsEndpoint,
+                method: 'POST',
+                json: true,
+                auth: {
+                    user: answers.user,
+                    password: answers.password
+                }
+            }, onResponse);
         }
-
-        request({
-            body: {
-                name: name,
-                script: content,
-                email: email
-            },
-            uri: scriptsEndpoint,
-            method: 'POST',
-            json: true
-        }, onResponse);
-    }
+    });
 
     function onResponse(err, response, body) {
         if(err != null) {

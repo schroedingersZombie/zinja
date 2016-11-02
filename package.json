@@ -1,10 +1,9 @@
 {
-  "name": "soke",
+  "name": "zinja",
   "version": "0.1.0",
   "description": "A command line tool to execute or publish shell scripts from and to the central soke repository or your local system.",
-  "repository": "LionC/shell-ninja",
+  "repository": "LionC/soke",
   "keywords": [
-    "soke",
     "shell",
     "bash",
     "script",
@@ -13,18 +12,19 @@
   "author": "Leon Strauss <me@lionc.de> (lionc.de)",
   "license": "GPL-3.0+",
   "bugs": {
-    "url": "https://github.com/LionC/shell-ninja/issues"
+    "url": "https://github.com/LionC/soke/issues"
   },
-  "homepage": "http://soke.io",
+  "homepage": "http://zinja.io",
   "preferGlobal": true,
   "bin": {
-    "soke": "soke.js",
-    "sk": "soke.js"
+    "zinja": "zinja.js",
+    "zj": "zinja.js"
   },
   "dependencies": {
     "commander": "^2.9.0",
     "inquirer": "^1.0.2",
-    "persistent-cache": "^0.1.0",
-    "request": "^2.72.0"
+    "persistent-cache": "^1.0.0",
+    "request": "^2.72.0",
+    "temp": "^0.8.3"
   }
 }
