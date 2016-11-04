@@ -21,6 +21,7 @@
     "zj": "zinja.js"
   },
   "dependencies": {
+    "cli-columns": "^1.0.6",
     "commander": "^2.9.0",
     "inquirer": "^1.0.2",
     "persistent-cache": "^1.0.0",
