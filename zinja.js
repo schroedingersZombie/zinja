@@ -10,6 +10,7 @@ var inquirer = require('inquirer');
 var cache = require('persistent-cache');
 var temp = require('temp').track();
 var columns = require('cli-columns');
+var Promise = require('promise');
 
 var name = basename(process.argv[1], '.js');
 
@@ -18,6 +19,11 @@ var scriptsEndpoint = 'http://localhost:8080/scripts';
 var localScripts = cache({
     name: 'local'
 });
+
+var settings = cache({
+    name: 'settings'
+});
+var CREDENDTIALS_KEY = 'credentials';
 
 var remoteCache = cache({
     duration: 1000 * 3600 * 24 * 7
@@ -224,6 +230,10 @@ function unregister(name) {
     })
 }
 
+function republish(name, fileName) {
+
+}
+
 function publish(fileName) {
     inquirer.prompt([{
         message: 'Enter the name the script should be published under:',
@@ -235,15 +245,11 @@ function publish(fileName) {
 
             return true;
         }
-    }, {
-        message: 'Enter your username (if you haven\'t one yet, run zj register-new-user):',
-        name: 'user',
-        type: 'input'
-    }, {
-        message: 'Enter your password:',
-        name: 'password',
-        type: 'password'
     }]).then(function(answers) {
+        return getCredentials().then(function (credAnswers) {
+            credAnswers.name = answers.name;
+        });
+    }).then(function(answers) {
         fs.readFile(fileName, 'utf8', onFileRead);
 
         function onFileRead(err, content) {
@@ -305,4 +311,40 @@ function search(query) {
 
         console.log(columns(JSON.parse(body)));
     }
+}
+
+function getCredentials() {
+    return new Promise(function(resolve, reject) {
+        settings.get(CREDENDTIALS_KEY, function(err, credentials) {
+            if(!credentials)
+                return reject();
+
+            var split = credentials.split(':');
+            var user = split[0];
+            var password = split.slice(1).join('');
+
+            console.log('Using stored credentials for user ' + user);
+
+            resolve({
+                user: user,
+                password: password
+            });
+        });
+    }).catch(function() {
+        console.log('Enter your credentials (if you do not have an account yet, run zj register-new-user)');
+
+        //TODO: Ask to save credentials and add logout / login commands for that
+
+        return inquirer.prompt([
+            {
+                message: 'Username:',
+                name: 'user',
+                type: 'input'
+            }, {
+                message: 'Password:',
+                name: 'password',
+                type: 'password'
+            }
+        ]);
+    });
 }
