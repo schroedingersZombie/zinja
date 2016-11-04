@@ -248,6 +248,7 @@ function publish(fileName) {
     }]).then(function(answers) {
         return getCredentials().then(function (credAnswers) {
             credAnswers.name = answers.name;
+            return credAnswers;
         });
     }).then(function(answers) {
         fs.readFile(fileName, 'utf8', onFileRead);
