@@ -16,6 +16,7 @@ var assertError = require('assert').ifError;
 var name = basename(process.argv[1], '.js');
 
 var scriptsEndpoint = 'http://localhost:8080/scripts';
+var usersEndpoint = 'http://localhost:8080/users';
 
 var localScripts = cache({
     name: 'local'
@@ -81,6 +82,13 @@ program
     .command('logout')
     .description('Log out of the currently logged in zinja account')
     .action(logout);
+
+program
+    .command('register-new-user')
+    .description('Register a new zinja account')
+    .action(registerNewUser);
+
+
 
 program.parse(process.argv);
 
@@ -303,9 +311,8 @@ function publish(fileName, options) {
             }, onResponse);
 
             function onResponse(err, response, body) {
-                if(err != null) {
+                if(err != null)
                     return onConnectionProblem();
-                }
 
                 switch (response.statusCode) {
                     case 201:
@@ -438,6 +445,60 @@ function logout() {
         assertError(err);
 
         console.log('Logged out successfully');
+    }
+}
+
+function registerNewUser() {
+    inquirer.prompt([
+        {
+            message: 'Username:',
+            name: 'user',
+            type: 'input'
+        }, {
+            message: 'Password:',
+            name: 'password',
+            type: 'password',
+            validate: function(value) {
+                return value.length > 7 || 'Password must have at least 8 characters';
+            }
+        }, {
+            message: 'Repeat password:',
+            name: 'password',
+            type: 'password',
+            validate: function(value, answers) {
+                return value == answers.password || 'Password repeat and password do not match';
+            }
+        }, {
+            message: 'E-Mail (used only to recover your account):',
+            name: 'email',
+            type: 'input'
+        }]).then(function (answers) {
+            request({
+                body: {
+                    username: answers.user,
+                    password: answers.password,
+                    email: answers.email
+                },
+                uri: usersEndpoint,
+                method: 'POST',
+                json: true
+            }, onResponse);
+        });
+
+    function onResponse(err, response) {
+        if(err != null)
+            return onConnectionProblem();
+
+        switch(response.statusCode) {
+            case 201:
+                console.log('User successfully registered. Have fun using zinja!');
+                return;
+            case 409:
+                console.log('A user with that name already exists');
+                break;
+            default:
+                onConnectionProblem();
+        }
     }
 }
 
