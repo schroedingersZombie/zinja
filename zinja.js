@@ -42,6 +42,7 @@ program
 
 program
     .command('register <name> <file>')
+    .option('-s, --string', 'Interpret the file argument as the script in string form instead of a file containing the script')
     .description('Registers a script in the local repository')
     .action(register);
 
@@ -52,6 +53,7 @@ program
 
 program
     .command('publish <file>')
+    .option('-s, --string', 'Interpret the file argument as the script in string form instead of a file containing the script')
     .description('Publishes the given script to the central zinja repository')
     .action(publish);
 
@@ -209,8 +211,12 @@ function executeScript(script, args) {
     }
 }
 
-function register(name, fileName) {
-    fs.readFile(fileName, 'utf8', onFileRead);
+function register(name, fileName, options) {
+    if(options.string) {
+        onFileRead(null, fileName);
+    } else {
+        fs.readFile(fileName, 'utf8', onFileRead);
+    }
 
     function onFileRead(err, content) {
         if(err != null) {
@@ -245,7 +251,7 @@ function republish(name, fileName) {
 
 }
 
-function publish(fileName) {
+function publish(fileName, options) {
     inquirer.prompt([{
         message: 'Enter the name the script should be published under:',
         name: 'name',
@@ -262,7 +268,11 @@ function publish(fileName) {
             return creds;
         });
     }).then(function(answers) {
-        fs.readFile(fileName, 'utf8', onFileRead);
+        if(options.string) {
+            onFileRead(null, fileName);
+        } else {
+            fs.readFile(fileName, 'utf8', onFileRead);
+        }
 
         function onFileRead(err, content) {
             if(err != null) {
@@ -328,6 +338,8 @@ function search(query) {
 function getCredentials() {
     return getStoredCredentials().then(function (creds) {
         console.log('Found stored credentials for user ' + creds.user);
+        
+        return creds;
     }).catch(askForCredentials);
 }
 
