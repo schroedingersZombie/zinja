@@ -301,25 +301,35 @@ function publish(fileName, options) {
                     password: answers.password
                 }
             }, onResponse);
-        }
 
-        function onResponse(err, response, body) {
-            if(err != null) {
-                return onConnectionProblem();
-            }
+            function onResponse(err, response, body) {
+                if(err != null) {
+                    return onConnectionProblem();
+                }
 
-            switch (response.statusCode) {
-                case 201:
-                    console.log('Successfully published script ' + answers.name);
-                    break;
-                case 401:
-                    console.error('Authentication failed');
-                    process.exit(1);
-                case 409:
-                    console.error('A script with that name already exists');
-                    process.exit(1);
-                default:
-                    console.error('There was some problem with the server. Try again later.');
+                switch (response.statusCode) {
+                    case 201:
+                        console.log('Successfully published script ' + answers.name);
+                        break;
+                    case 401:
+                        console.error('Authentication failed');
+                        process.exit(1);
+                    case 409:
+                        if(response.headers['x-conflicting-user'] == answers.user)
+                        return askForPatch(answers.name,
+                            {
+                                script: content
+                                //TODO: add description
+                            },{
+                                user: answers.user,
+                                password: answers.password
+                            });
+
+                        console.error('A script with that name already exists');
+                        process.exit(1);
+                        default:
+                        console.error('There was some problem with the server. Try again later.');
+                }
             }
         }
     });
