@@ -152,7 +152,6 @@ function fetchRemoteScript(name, cb) {
         if(response.statusCode != 200) {
             if(response.statusCode == 404) {
                 console.error('Script ' + name + ' was not found in the central zinja repository. Try ' + name + ' search ' + name);
-                cb(404);
             }
 
             //TODO: So something better with the error
@@ -262,6 +261,15 @@ function publish(fileName, options) {
 
             return true;
         }
+    },{
+        message: 'Do you want to add a description to explain how to use the script?',
+        name: 'addDescription',
+        type: 'confirm'
+    }, {
+        message: 'Enter the description (your default editor is used)',
+        name: 'description',
+        type: 'editor',
+        when: function(answers) { return answers.addDescription; }
     }]).then(function(answers) {
         return getCredentials().then(function (creds) {
             creds.name = answers.name;
@@ -317,6 +325,37 @@ function publish(fileName, options) {
     });
  }
 
+function askForPatch(name, patch, credentials, cb) {
+    cb = cb || function(){};
+
+    inquirer.prompt([{
+        message: 'You already have a script with that name published. Do you want to overwrite it?',
+        type: 'confirm',
+        name: 'patch'
+    }]).then(function(answers) {
+        if(answers.patch) {
+            return request.patch({
+                 body: patch,
+                 uri: scriptsEndpoint + '/' + name,
+                 method: 'PATCH',
+                 json: true,
+                 auth: credentials
+            }, onPatched);
+        }
+
+        return cb(null, false);
+    });
+
+    function onPatched(err) {
+        if(err != null) {
+            onConnectionProblem();
+            return cb(err);
+        }
+
+        console.log('Script has been updated successfully');
+    }
+}
+
 function search(query) {
     request.get({
         uri: scriptsEndpoint,
@@ -338,7 +377,7 @@ function search(query) {
 function getCredentials() {
     return getStoredCredentials().then(function (creds) {
         console.log('Found stored credentials for user ' + creds.user);
-        
+
         return creds;
     }).catch(askForCredentials);
 }
