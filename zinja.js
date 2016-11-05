@@ -11,6 +11,7 @@ var cache = require('persistent-cache');
 var temp = require('temp').track();
 var columns = require('cli-columns');
 var Promise = require('promise');
+var assertError = require('assert').ifError;
 
 var name = basename(process.argv[1], '.js');
 
@@ -68,6 +69,16 @@ program
     .command('info <name>')
     .description('Shows the source of and other available information on the specified script')
     .action(info);
+
+program
+    .command('login')
+    .description('Log into your zinja account (stoes credentials so oyu do not have to enter them everytime)')
+    .action(login);
+
+program
+    .command('logout')
+    .description('Log out of the currently logged in zinja account')
+    .action(logout);
 
 program.parse(process.argv);
 
@@ -246,9 +257,9 @@ function publish(fileName) {
             return true;
         }
     }]).then(function(answers) {
-        return getCredentials().then(function (credAnswers) {
-            credAnswers.name = answers.name;
-            return credAnswers;
+        return getCredentials().then(function (creds) {
+            creds.name = answers.name;
+            return creds;
         });
     }).then(function(answers) {
         fs.readFile(fileName, 'utf8', onFileRead);
@@ -315,6 +326,61 @@ function search(query) {
 }
 
 function getCredentials() {
+    return getStoredCredentials().then(function (creds) {
+        console.log('Found stored credentials for user ' + creds.user);
+    }).catch(askForCredentials);
+}
+
+function askForCredentials(saveWithoutAsking) {
+    console.log('Enter your credentials (if you do not have an account yet, run zj register-new-user)');
+
+    //TODO: Ask to save credentials
+
+    return inquirer.prompt([
+        {
+            message: 'Username:',
+            name: 'user',
+            type: 'input'
+        }, {
+            message: 'Password:',
+            name: 'password',
+            type: 'password'
+        }, {
+            message: 'Should those credentials be stored so you do not have to enter them again?',
+            name: 'shouldSave',
+            type: 'confirm',
+            when: !saveWithoutAsking
+        }
+    ]).then(function (creds) {
+        if(saveWithoutAsking || creds.shouldSave) {
+            settings.put(CREDENDTIALS_KEY, creds.user + ':' + creds.password, assertError);
+        }
+
+        delete creds.shouldSave;
+
+        return creds;
+    });
+}
+
+function login() {
+    askForCredentials(true);
+}
+
+function logout() {
+    getStoredCredentials().then(function() {
+        settings.delete(CREDENDTIALS_KEY, onLoggedOut);
+    }).catch(function() {
+        console.log('You are not logged in');
+    });
+
+    function onLoggedOut(err) {
+        assertError(err);
+
+        console.log('Logged out successfully');
+    }
+}
+
+function getStoredCredentials() {
     return new Promise(function(resolve, reject) {
         settings.get(CREDENDTIALS_KEY, function(err, credentials) {
             if(!credentials)
@@ -324,28 +390,10 @@ function getCredentials() {
             var user = split[0];
             var password = split.slice(1).join('');
 
-            console.log('Using stored credentials for user ' + user);
-
             resolve({
                 user: user,
                 password: password
             });
         });
-    }).catch(function() {
-        console.log('Enter your credentials (if you do not have an account yet, run zj register-new-user)');
-
-        //TODO: Ask to save credentials and add logout / login commands for that
-
-        return inquirer.prompt([
-            {
-                message: 'Username:',
-                name: 'user',
-                type: 'input'
-            }, {
-                message: 'Password:',
-                name: 'password',
-                type: 'password'
-            }
-        ]);
     });
 }
