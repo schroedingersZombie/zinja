@@ -17,6 +17,7 @@ var name = basename(process.argv[1], '.js');
 
 var scriptsEndpoint = 'http://localhost:8080/scripts';
 var usersEndpoint = 'http://localhost:8080/users';
+var loginEndpoint = 'http://localhost:8080/login';
 
 var localScripts = cache({
     name: 'local'
@@ -431,12 +432,35 @@ function askForCredentials(saveWithoutAsking) {
 }
 
 function login() {
-    askForCredentials(true);
+    askForCredentials(true).then(function (creds) {
+        request({
+            uri: loginEndpoint,
+            method: 'GET',
+            auth: creds
+        }, onResponse);
+    });
+
+    function onResponse(err, response) {
+        if(err)
+            return onConnectionProblem();
+
+        switch(response.statusCode) {
+            case 204:
+                return console.log('Logged in successfully');
+            case 401:
+                console.error('Authentication failed');
+                deleteStoredCredentials();
+                process.exit(1);
+            default:
+                deleteStoredCredentials();
+                onConnectionProblem();
+        }
+    }
 }
 
 function logout() {
     getStoredCredentials().then(function() {
-        settings.delete(CREDENDTIALS_KEY, onLoggedOut);
+        deleteStoredCredentials(onLoggedOut);
     }).catch(function() {
         console.log('You are not logged in');
     });
@@ -446,6 +470,10 @@ function logout() {
 
         console.log('Logged out successfully');
     }
+}
+
+function deleteStoredCredentials(cb) {
+    settings.delete(CREDENDTIALS_KEY, cb);
 }
 
 function registerNewUser() {
