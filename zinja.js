@@ -287,6 +287,9 @@ function publish(fileName, options) {
             if(!name.match(/^[a-z]+(-[a-z0-9]+)*$/))
                 return 'Invalid name. Script names can only contain lowercase letters, numbers and dashes and must begin with a letter';
 
+            if(name.length > 60 || name.length < 4)
+                return 'Script name must be at lest 4 and at most 60 characters long';
+
             return true;
         }
     },{
@@ -506,7 +509,13 @@ function registerNewUser() {
             name: 'password',
             type: 'password',
             validate: function(value) {
-                return value.length > 7 || 'Password must have at least 8 characters';
+                if(value.length < 8)
+                    return 'Password must have at least 8 characters'
+
+                if(value.length > 60)
+                    return 'Password can not have more than 60 characters';
+
+                return true;
             }
         }, {
             message: 'Repeat password:',
@@ -518,7 +527,10 @@ function registerNewUser() {
         }, {
             message: 'E-Mail (used only to recover your account):',
             name: 'email',
-            type: 'input'
+            type: 'input',
+            validate: function (value) {
+                return /^\S+@\S+$/.test(value) || 'Please enter a valid e-mail address';
+            }
         }]).then(function (answers) {
             request({
                 body: {
