@@ -12,6 +12,7 @@ var temp = require('temp').track();
 var columns = require('cli-columns');
 var Promise = require('promise');
 var assertError = require('assert').ifError;
+var columnify = require('columnify');
 
 var name = basename(process.argv[1], '.js');
 
@@ -174,15 +175,33 @@ function fetchRemoteScript(name, cb) {
 }
 
 function info(name) {
-    fetchScript(name, function(err, script) {
+    request.get({
+        uri: scriptsEndpoint + '/' + name + '/info',
+        json: true
+    }, function(err, response, scriptInfo) {
         if(err != null) {
             process.exit(1);
         }
 
-        console.log('Script ' + name + ' source:');
-        console.log('----------');
-        console.log(script);
-        console.log('----------');
+        var output = {
+            'Name:': scriptInfo.name,
+            'Author:': scriptInfo.user
+        };
+
+
+        console.log(columnify(output, { showHeaders: false, config: { key: { align: 'right' } } }));
+
+        if(scriptInfo.description) {
+            console.log();
+            console.log('Descrirption');
+            console.log('------------');
+            console.log(scriptInfo.description);
+        }
+
+        console.log();
+        console.log('Source');
+        console.log('------');
+        console.log(scriptInfo.script);
     });
 }
 
