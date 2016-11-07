@@ -13,6 +13,7 @@ var columns = require('cli-columns');
 var Promise = require('promise');
 var assertError = require('assert').ifError;
 var columnify = require('columnify');
+var execa = require('execa');
 
 var name = basename(process.argv[1], '.js');
 
@@ -220,15 +221,25 @@ function executeScript(script, args) {
             process.exit(1);
         }
 
-        var bashArgs = args.join(' ');
-        var command = 'source ' + tempFilePath + ' ' + bashArgs;
+        /*var bashArgs = args.join(' ');
+        var command = 'source ' + tempFilePath + ' ' + bashArgs;*/
 
-        var child = childProcess.exec(command);
+        var chmodResult = execa.shellSync('chmod +x ' + tempFilePath);
+
+        if(chmodResult.error) {
+            console.error(chmodResult.stderr);
+            console.error('Could not make the script tempfile executable because of:');
+            console.error(chmodResult.error);
+            process.exit(1);
+        }
+
+        var child = execa(tempFilePath, args);//childProcess.exec(command);
 
         child.stdout.pipe(process.stdout);
         child.stderr.pipe(process.stderr);
 
-        child.on('close', function(exitCode) {
+
+        child.on('exit', function(exitCode) {
             process.exit(exitCode);
         });
 
@@ -319,19 +330,30 @@ function publish(fileName, options) {
                 process.exit(1);
             }
 
-            request({
-                body: {
-                    name: answers.name,
-                    script: content
-                },
-                uri: scriptsEndpoint,
-                method: 'POST',
-                json: true,
-                auth: {
-                    user: answers.user,
-                    password: answers.password
-                }
-            }, onResponse);
+            if(!content.startsWith('#!'))
+                askForShebang(addPrefixAndDoRequest);
+            else
+                addPrefixAndDoRequest(null, '');
+
+            function addPrefixAndDoRequest(err, prefix) {
+                assertError(err);
+
+                content = prefix + content;
+
+                request({
+                    body: {
+                        name: answers.name,
+                        script: content
+                    },
+                    uri: scriptsEndpoint,
+                    method: 'POST',
+                    json: true,
+                    auth: {
+                        user: answers.user,
+                        password: answers.password
+                    }
+                }, onResponse);
+            }
 
             function onResponse(err, response, body) {
                 if(err != null)
@@ -364,6 +386,28 @@ function publish(fileName, options) {
         }
     });
  }
+
+function askForShebang(cb) {
+    inquirer.prompt([{
+        message: 'Your script does not have a shebang (#!/some/interpreter). A shebang makes sure that your script is always being run with the same interpreter, to avoid incompatibility issues (e.g. betweegn zsh and bash).\nWhat do you want to do?',
+        type: 'list',
+        name: 'prefix',
+        choices: [{
+            name: 'Add Shebang for bash (if you are publishing a shell script and you do not know what to choose, choose this)',
+            short: 'Add Shebang for bash',
+            value: '#!/bin/bash\n'
+        }, {
+            name: 'Add Shebang for sh',
+            value: '#!/bin/sh\n'
+        }, new inquirer.Separator(),{
+            name: 'I am aware of the consequences and want my script to be executed in the users current shell (do not add a shebang)',
+            short: 'Do not add a shebang',
+            value: ''
+        }]
+    }]).then(function(answers) {
+        cb(null, answers.prefix);
+    });
+}
 
 function askForPatch(name, patch, credentials, cb) {
     cb = cb || function(){};
