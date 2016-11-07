@@ -14,6 +14,8 @@ var remoteCache = cache({
     duration: 1000 * 3600 * 24 * 7
 });
 
+const scriptsEndpoint = 'http://localhost:8080/scripts';
+
 function fetchScript(name, cb) {
     localScripts.get(name, onLocalCache);
 
@@ -68,7 +70,7 @@ function fetchRemoteScript(name, cb) {
 
         if(response.statusCode != 200) {
             if(response.statusCode == 404) {
-                console.error('Script ' + name + ' was not found in the central zinja repository. Try ' + name + ' search ' + name);
+                console.error('Script ' + name + ' was not found in the central zinja repository. Try \'zj search\'');
             }
 
             //TODO: So something better with the error
