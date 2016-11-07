@@ -1,21 +1,15 @@
 #! /usr/bin/env node
 
 var fs = require('fs');
-var childProcess = require('child_process');
-var basename = require('path').basename;
 
 var program = require('commander');
 var request = require('request');
 var inquirer = require('inquirer');
 var cache = require('persistent-cache');
-var temp = require('temp').track();
 var columns = require('cli-columns');
 var Promise = require('promise');
 var assertError = require('assert').ifError;
 var columnify = require('columnify');
-var execa = require('execa');
-
-var name = basename(process.argv[1], '.js');
 
 var scriptsEndpoint = 'http://localhost:8080/scripts';
 var usersEndpoint = 'http://localhost:8080/users';
@@ -30,9 +24,6 @@ var settings = cache({
 });
 var CREDENDTIALS_KEY = 'credentials';
 
-var remoteCache = cache({
-    duration: 1000 * 3600 * 24 * 7
-});
 
 program
     .version('0.1.0')
@@ -41,7 +32,7 @@ program
 
 program
     .command('* [command-arguments...]')
-    .description('Execute the zinja script * (for example \'' + name + ' hello-world\' will execute the hello-world script)')
+    .description('Execute the zinja script * (for example \'zj hello-world\' will execute the hello-world script)')
     .action(execute);
 
 program
@@ -99,7 +90,7 @@ function toBeImplemented() {
     console.log('To be implemented');
 }
 
-if(!process.argv.slice(2).length) {
+if (!process.argv.slice(2).length) {
     program.outputHelp();
 }
 
@@ -108,79 +99,14 @@ function onConnectionProblem() {
     process.exit(1);
 }
 
-function fetchScript(name, cb) {
-    localScripts.get(name, onLocalCache);
 
-    function onLocalCache(err, script) {
-        if(err != null) {
-            return cb(err);
-        }
-
-        if(script === undefined)
-            return remoteCache.get(name, onRemoteCache);
-
-        return cb(null, script);
-    }
-
-    function onRemoteCache(err, script) {
-        if(err) {
-            return cb(err);
-        }
-
-        if(script === undefined)
-            return fetchRemoteScript(name, onRemote);
-
-        return cb(null, script);
-    }
-
-    function onRemote(err, script) {
-        if(err != null) {
-            return cb(err);
-        }
-
-        return cb(null, script);
-    }
-}
-
-function execute(args) {
-    var name = args[0];
-    var args = args.slice(1);
-
-    fetchScript(name, function(err, script) {
-        if(err != null) {
-            return process.exit(1);
-        }
-
-        return executeScript(script, args);
-    });
-}
-
-function fetchRemoteScript(name, cb) {
-    request.get(scriptsEndpoint + '/' + name, function(err, response, body) {
-        if(err != null)
-            return onConnectionProblem();
-
-        if(response.statusCode != 200) {
-            if(response.statusCode == 404) {
-                console.error('Script ' + name + ' was not found in the central zinja repository. Try ' + name + ' search ' + name);
-            }
-
-            //TODO: So something better with the error
-            return cb(response.statusCode);
-        }
-
-        remoteCache.put(name, body, function(err) {});
-
-        cb(null, body);
-    });
-}
 
 function info(name) {
     request.get({
         uri: scriptsEndpoint + '/' + name + '/info',
         json: true
     }, function(err, response, scriptInfo) {
-        if(err != null) {
+        if (err != null) {
             process.exit(1);
         }
 
@@ -190,9 +116,16 @@ function info(name) {
         };
 
 
-        console.log(columnify(output, { showHeaders: false, config: { key: { align: 'right' } } }));
+        console.log(columnify(output, {
+            showHeaders: false,
+            config: {
+                key: {
+                    align: 'right'
+                }
+            }
+        }));
 
-        if(scriptInfo.description) {
+        if (scriptInfo.description) {
             console.log();
             console.log('Descrirption');
             console.log('------------');
@@ -206,58 +139,16 @@ function info(name) {
     });
 }
 
-function executeScript(script, args) {
-    var tempFilePath = '';
-
-    temp.open('zinja', function tempFileCreated(err, tmpFile) {
-        tempFilePath = tmpFile.path;
-        fs.write(tmpFile.fd, script, onFileWritten);
-    });
-
-    function onFileWritten(err) {
-        if(err != null) {
-            console.error('Could not write script temp file:');
-            console.error(err);
-            process.exit(1);
-        }
-
-        /*var bashArgs = args.join(' ');
-        var command = 'source ' + tempFilePath + ' ' + bashArgs;*/
-
-        var chmodResult = execa.shellSync('chmod +x ' + tempFilePath);
-
-        if(chmodResult.error) {
-            console.error(chmodResult.stderr);
-            console.error('Could not make the script tempfile executable because of:');
-            console.error(chmodResult.error);
-            process.exit(1);
-        }
-
-        var child = execa(tempFilePath, args);//childProcess.exec(command);
-
-        child.stdout.pipe(process.stdout);
-        child.stderr.pipe(process.stderr);
-
-
-        child.on('exit', function(exitCode) {
-            process.exit(exitCode);
-        });
-
-        child.on('error', function() {
-            process.exit(1);
-        });
-    }
-}
 
 function register(name, fileName, options) {
-    if(options.string) {
+    if (options.string) {
         onFileRead(null, fileName);
     } else {
         fs.readFile(fileName, 'utf8', onFileRead);
     }
 
     function onFileRead(err, content) {
-        if(err != null) {
+        if (err != null) {
             console.error('Could not read file ' + fileName);
             process.exit(1);
         }
@@ -266,7 +157,7 @@ function register(name, fileName, options) {
     }
 
     function onLocalCacheWritten(err) {
-        if(err != null) {
+        if (err != null) {
             console.error('Could not write to local scripts');
             process.exit(1);
         }
@@ -277,7 +168,7 @@ function register(name, fileName, options) {
 
 function unregister(name) {
     localScripts.delete(name, function(err) {
-        if(err != null) {
+        if (err != null) {
             return console.error('Could not unregister local script \'' + name + '\' (maybe it is not registered?)');
         }
 
@@ -295,15 +186,15 @@ function publish(fileName, options) {
         name: 'name',
         type: 'input',
         validate: function(name) {
-            if(!name.match(/^[a-z]+(-[a-z0-9]+)*$/))
+            if (!name.match(/^[a-z]+(-[a-z0-9]+)*$/))
                 return 'Invalid name. Script names can only contain lowercase letters, numbers and dashes and must begin with a letter';
 
-            if(name.length > 60 || name.length < 4)
+            if (name.length > 60 || name.length < 4)
                 return 'Script name must be at lest 4 and at most 60 characters long';
 
             return true;
         }
-    },{
+    }, {
         message: 'Do you want to add a description to explain how to use the script?',
         name: 'addDescription',
         type: 'confirm'
@@ -311,26 +202,28 @@ function publish(fileName, options) {
         message: 'Enter the description (your default editor is used)',
         name: 'description',
         type: 'editor',
-        when: function(answers) { return answers.addDescription; }
+        when: function(answers) {
+            return answers.addDescription;
+        }
     }]).then(function(answers) {
-        return getCredentials().then(function (creds) {
+        return getCredentials().then(function(creds) {
             creds.name = answers.name;
             return creds;
         });
     }).then(function(answers) {
-        if(options.string) {
+        if (options.string) {
             onFileRead(null, fileName);
         } else {
             fs.readFile(fileName, 'utf8', onFileRead);
         }
 
         function onFileRead(err, content) {
-            if(err != null) {
+            if (err != null) {
                 console.error('Could not read file ' + fileName);
                 process.exit(1);
             }
 
-            if(!content.startsWith('#!'))
+            if (!content.startsWith('#!'))
                 askForShebang(addPrefixAndDoRequest);
             else
                 addPrefixAndDoRequest(null, '');
@@ -356,7 +249,7 @@ function publish(fileName, options) {
             }
 
             function onResponse(err, response, body) {
-                if(err != null)
+                if (err != null)
                     return onConnectionProblem();
 
                 switch (response.statusCode) {
@@ -367,25 +260,24 @@ function publish(fileName, options) {
                         console.error('Authentication failed');
                         process.exit(1);
                     case 409:
-                        if(response.headers['x-conflicting-user'] == answers.user)
-                        return askForPatch(answers.name,
-                            {
+                        if (response.headers['x-conflicting-user'] == answers.user)
+                            return askForPatch(answers.name, {
                                 script: content
-                                //TODO: add description
-                            },{
+                                    //TODO: add description
+                            }, {
                                 user: answers.user,
                                 password: answers.password
                             });
 
                         console.error('A script with that name already exists');
                         process.exit(1);
-                        default:
+                    default:
                         console.error('There was some problem with the server. Try again later.');
                 }
             }
         }
     });
- }
+}
 
 function askForShebang(cb) {
     inquirer.prompt([{
@@ -399,7 +291,7 @@ function askForShebang(cb) {
         }, {
             name: 'Add Shebang for sh',
             value: '#!/bin/sh\n'
-        }, new inquirer.Separator(),{
+        }, new inquirer.Separator(), {
             name: 'I am aware of the consequences and want my script to be executed in the users current shell (do not add a shebang)',
             short: 'Do not add a shebang',
             value: ''
@@ -410,20 +302,20 @@ function askForShebang(cb) {
 }
 
 function askForPatch(name, patch, credentials, cb) {
-    cb = cb || function(){};
+    cb = cb || function() {};
 
     inquirer.prompt([{
         message: 'You already have a script with that name published. Do you want to overwrite it?',
         type: 'confirm',
         name: 'patch'
     }]).then(function(answers) {
-        if(answers.patch) {
+        if (answers.patch) {
             return request.patch({
-                 body: patch,
-                 uri: scriptsEndpoint + '/' + name,
-                 method: 'PATCH',
-                 json: true,
-                 auth: credentials
+                body: patch,
+                uri: scriptsEndpoint + '/' + name,
+                method: 'PATCH',
+                json: true,
+                auth: credentials
             }, onPatched);
         }
 
@@ -431,13 +323,17 @@ function askForPatch(name, patch, credentials, cb) {
     });
 
     function onPatched(err) {
-        if(err != null) {
+        if (err != null) {
             onConnectionProblem();
             return cb(err);
         }
 
         console.log('Script has been updated successfully');
     }
+}
+
+function execute(args) {
+    return require('./execute')(args);
 }
 
 function search(query) {
@@ -450,7 +346,7 @@ function search(query) {
     }, onResponse);
 
     function onResponse(err, response, body) {
-        if(err != null) {
+        if (err != null) {
             return onConnectionProblem();
         }
 
@@ -459,7 +355,7 @@ function search(query) {
 }
 
 function getCredentials() {
-    return getStoredCredentials().then(function (creds) {
+    return getStoredCredentials().then(function(creds) {
         console.log('Found stored credentials for user ' + creds.user);
 
         return creds;
@@ -471,23 +367,21 @@ function askForCredentials(saveWithoutAsking) {
 
     //TODO: Ask to save credentials
 
-    return inquirer.prompt([
-        {
-            message: 'Username:',
-            name: 'user',
-            type: 'input'
-        }, {
-            message: 'Password:',
-            name: 'password',
-            type: 'password'
-        }, {
-            message: 'Should those credentials be stored so you do not have to enter them again?',
-            name: 'shouldSave',
-            type: 'confirm',
-            when: !saveWithoutAsking
-        }
-    ]).then(function (creds) {
-        if(saveWithoutAsking || creds.shouldSave) {
+    return inquirer.prompt([{
+        message: 'Username:',
+        name: 'user',
+        type: 'input'
+    }, {
+        message: 'Password:',
+        name: 'password',
+        type: 'password'
+    }, {
+        message: 'Should those credentials be stored so you do not have to enter them again?',
+        name: 'shouldSave',
+        type: 'confirm',
+        when: !saveWithoutAsking
+    }]).then(function(creds) {
+        if (saveWithoutAsking || creds.shouldSave) {
             settings.put(CREDENDTIALS_KEY, creds.user + ':' + creds.password, assertError);
         }
 
@@ -498,7 +392,7 @@ function askForCredentials(saveWithoutAsking) {
 }
 
 function login() {
-    askForCredentials(true).then(function (creds) {
+    askForCredentials(true).then(function(creds) {
         request({
             uri: loginEndpoint,
             method: 'GET',
@@ -507,10 +401,10 @@ function login() {
     });
 
     function onResponse(err, response) {
-        if(err)
+        if (err)
             return onConnectionProblem();
 
-        switch(response.statusCode) {
+        switch (response.statusCode) {
             case 204:
                 return console.log('Logged in successfully');
             case 401:
@@ -543,56 +437,55 @@ function deleteStoredCredentials(cb) {
 }
 
 function registerNewUser() {
-    inquirer.prompt([
-        {
-            message: 'Username:',
-            name: 'user',
-            type: 'input'
-        }, {
-            message: 'Password:',
-            name: 'password',
-            type: 'password',
-            validate: function(value) {
-                if(value.length < 8)
-                    return 'Password must have at least 8 characters'
+    inquirer.prompt([{
+        message: 'Username:',
+        name: 'user',
+        type: 'input'
+    }, {
+        message: 'Password:',
+        name: 'password',
+        type: 'password',
+        validate: function(value) {
+            if (value.length < 8)
+                return 'Password must have at least 8 characters'
 
-                if(value.length > 60)
-                    return 'Password can not have more than 60 characters';
+            if (value.length > 60)
+                return 'Password can not have more than 60 characters';
 
-                return true;
-            }
-        }, {
-            message: 'Repeat password:',
-            name: 'password',
-            type: 'password',
-            validate: function(value, answers) {
-                return value == answers.password || 'Password repeat and password do not match';
-            }
-        }, {
-            message: 'E-Mail (used only to recover your account):',
-            name: 'email',
-            type: 'input',
-            validate: function (value) {
-                return /^\S+@\S+$/.test(value) || 'Please enter a valid e-mail address';
-            }
-        }]).then(function (answers) {
-            request({
-                body: {
-                    username: answers.user,
-                    password: answers.password,
-                    email: answers.email
-                },
-                uri: usersEndpoint,
-                method: 'POST',
-                json: true
-            }, onResponse);
-        });
+            return true;
+        }
+    }, {
+        message: 'Repeat password:',
+        name: 'password',
+        type: 'password',
+        validate: function(value, answers) {
+            return value == answers.password || 'Password repeat and password do not match';
+        }
+    }, {
+        message: 'E-Mail (used only to recover your account):',
+        name: 'email',
+        type: 'input',
+        validate: function(value) {
+            return /^\S+@\S+$/.test(value) || 'Please enter a valid e-mail address';
+        }
+    }]).then(function(answers) {
+        request({
+            body: {
+                username: answers.user,
+                password: answers.password,
+                email: answers.email
+            },
+            uri: usersEndpoint,
+            method: 'POST',
+            json: true
+        }, onResponse);
+    });
 
     function onResponse(err, response) {
-        if(err != null)
+        if (err != null)
             return onConnectionProblem();
 
-        switch(response.statusCode) {
+        switch (response.statusCode) {
             case 201:
                 console.log('User successfully registered. Have fun using zinja!');
                 return;
@@ -608,7 +501,7 @@ function registerNewUser() {
 function getStoredCredentials() {
     return new Promise(function(resolve, reject) {
         settings.get(CREDENDTIALS_KEY, function(err, credentials) {
-            if(!credentials)
+            if (!credentials)
                 return reject();
 
             var split = credentials.split(':');
