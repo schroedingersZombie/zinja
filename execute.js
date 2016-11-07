@@ -6,7 +6,6 @@ var temp = require('temp').track();
 var assertError = require('assert').ifError;
 var execa = require('execa');
 
-
 var localScripts = cache({
     name: 'local'
 });

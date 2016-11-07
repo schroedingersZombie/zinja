@@ -6,7 +6,6 @@ var program = require('commander');
 var request = require('request');
 var inquirer = require('inquirer');
 var cache = require('persistent-cache');
-var columns = require('cli-columns');
 var Promise = require('promise');
 var assertError = require('assert').ifError;
 
@@ -15,10 +14,6 @@ var onConnectionProblem = require('./connection-problem');
 var scriptsEndpoint = 'http://localhost:8080/scripts';
 var usersEndpoint = 'http://localhost:8080/users';
 var loginEndpoint = 'http://localhost:8080/login';
-
-var localScripts = cache({
-    name: 'local'
-});
 
 var settings = cache({
     name: 'settings'
@@ -83,8 +78,6 @@ program
     .description('Register a new zinja account')
     .action(registerNewUser);
 
-
-
 program.parse(process.argv);
 
 function toBeImplemented() {
@@ -96,43 +89,11 @@ if (!process.argv.slice(2).length) {
 }
 
 function register(name, fileName, options) {
-    if (options.string) {
-        onFileRead(null, fileName);
-    } else {
-        fs.readFile(fileName, 'utf8', onFileRead);
-    }
-
-    function onFileRead(err, content) {
-        if (err != null) {
-            console.error('Could not read file ' + fileName);
-            process.exit(1);
-        }
-
-        localScripts.put(name, content, onLocalCacheWritten);
-    }
-
-    function onLocalCacheWritten(err) {
-        if (err != null) {
-            console.error('Could not write to local scripts');
-            process.exit(1);
-        }
-
-        console.log('Script locally registered as ' + name);
-    }
+    require('./register')(name, fileName, options);
 }
 
 function unregister(name) {
-    localScripts.delete(name, function(err) {
-        if (err != null) {
-            return console.error('Could not unregister local script \'' + name + '\' (maybe it is not registered?)');
-        }
-
-        console.log('Successfully unregistered script \'' + name + '\'');
-    })
-}
-
-function republish(name, fileName) {
-
+    require('./unregister')(name);
 }
 
 function publish(fileName, options) {
@@ -296,21 +257,7 @@ function info(name) {
 }
 
 function search(query) {
-    request.get({
-        uri: scriptsEndpoint,
-        method: 'GET',
-        qs: {
-            q: query
-        }
-    }, onResponse);
-
-    function onResponse(err, response, body) {
-        if (err != null) {
-            return onConnectionProblem();
-        }
-
-        console.log(columns(JSON.parse(body)));
-    }
+    require('./search')(query);
 }
 
 function getCredentials() {
@@ -396,65 +343,7 @@ function deleteStoredCredentials(cb) {
 }
 
 function registerNewUser() {
-    inquirer.prompt([{
-        message: 'Username:',
-        name: 'user',
-        type: 'input'
-    }, {
-        message: 'Password:',
-        name: 'password',
-        type: 'password',
-        validate: function(value) {
-            if (value.length < 8)
-                return 'Password must have at least 8 characters'
-
-            if (value.length > 60)
-                return 'Password can not have more than 60 characters';
-
-            return true;
-        }
-    }, {
-        message: 'Repeat password:',
-        name: 'password',
-        type: 'password',
-        validate: function(value, answers) {
-            return value == answers.password || 'Password repeat and password do not match';
-        }
-    }, {
-        message: 'E-Mail (used only to recover your account):',
-        name: 'email',
-        type: 'input',
-        validate: function(value) {
-            return /^\S+@\S+$/.test(value) || 'Please enter a valid e-mail address';
-        }
-    }]).then(function(answers) {
-        request({
-            body: {
-                username: answers.user,
-                password: answers.password,
-                email: answers.email
-            },
-            uri: usersEndpoint,
-            method: 'POST',
-            json: true
-        }, onResponse);
-    });
-
-    function onResponse(err, response) {
-        if (err != null)
-            return onConnectionProblem();
-
-        switch (response.statusCode) {
-            case 201:
-                console.log('User successfully registered. Have fun using zinja!');
-                return;
-            case 409:
-                console.log('A user with that name already exists');
-                break;
-            default:
-                onConnectionProblem();
-        }
-    }
+    require('./register-new-user')();
 }
 
 function getStoredCredentials() {
