@@ -1,7 +1,9 @@
 var request = require('request');
-var inquirer = require('inquirer');
+const inquirer = require('inquirer');
 
-var onConnectionProblem = require('./connection-problem');
+const onConnectionProblem = require('./connection-problem');
+
+var usersEndpoint = 'http://localhost:8080/users';
 
 function registerNewUser() {
     inquirer.prompt([{

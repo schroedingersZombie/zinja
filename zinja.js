@@ -12,7 +12,6 @@ var assertError = require('assert').ifError;
 var onConnectionProblem = require('./connection-problem');
 
 var scriptsEndpoint = 'http://localhost:8080/scripts';
-var usersEndpoint = 'http://localhost:8080/users';
 var loginEndpoint = 'http://localhost:8080/login';
 
 var settings = cache({
