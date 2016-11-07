@@ -9,7 +9,8 @@ var cache = require('persistent-cache');
 var columns = require('cli-columns');
 var Promise = require('promise');
 var assertError = require('assert').ifError;
-var columnify = require('columnify');
+
+var onConnectionProblem = require('./connection-problem');
 
 var scriptsEndpoint = 'http://localhost:8080/scripts';
 var usersEndpoint = 'http://localhost:8080/users';
@@ -93,52 +94,6 @@ function toBeImplemented() {
 if (!process.argv.slice(2).length) {
     program.outputHelp();
 }
-
-function onConnectionProblem() {
-    console.error('Could not connect to the repository, maybe there is a problem with your internet connection or we are currently under maintenance? Check zinja.io for updates or try again later');
-    process.exit(1);
-}
-
-
-
-function info(name) {
-    request.get({
-        uri: scriptsEndpoint + '/' + name + '/info',
-        json: true
-    }, function(err, response, scriptInfo) {
-        if (err != null) {
-            process.exit(1);
-        }
-
-        var output = {
-            'Name:': scriptInfo.name,
-            'Author:': scriptInfo.user
-        };
-
-
-        console.log(columnify(output, {
-            showHeaders: false,
-            config: {
-                key: {
-                    align: 'right'
-                }
-            }
-        }));
-
-        if (scriptInfo.description) {
-            console.log();
-            console.log('Descrirption');
-            console.log('------------');
-            console.log(scriptInfo.description);
-        }
-
-        console.log();
-        console.log('Source');
-        console.log('------');
-        console.log(scriptInfo.script);
-    });
-}
-
 
 function register(name, fileName, options) {
     if (options.string) {
@@ -333,7 +288,11 @@ function askForPatch(name, patch, credentials, cb) {
 }
 
 function execute(args) {
-    return require('./execute')(args);
+    require('./execute')(args);
+}
+
+function info(name) {
+    require('./info')(name);
 }
 
 function search(query) {
