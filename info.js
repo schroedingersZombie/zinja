@@ -15,6 +15,16 @@ function info(name) {
             process.exit(1);
         }
 
+        if(response.statusCode != 200) {
+            if(response.statusCode == 404) {
+                console.error('Script ' + name + ' was not found in the central zinja repository. Try \'zj search\'');
+            } else {
+                console.error('Error: ' + response.body);
+            }
+
+            process.exit(1);
+        }
+
         var output = {
             'Name:': scriptInfo.name,
             'Author:': scriptInfo.user

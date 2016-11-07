@@ -122,8 +122,8 @@ function publish(fileName, options) {
         }
     }]).then(function(answers) {
         return getCredentials().then(function(creds) {
-            creds.name = answers.name;
-            return creds;
+            answers.creds = creds;
+            return answers;
         });
     }).then(function(answers) {
         if (options.string) {
@@ -148,18 +148,20 @@ function publish(fileName, options) {
 
                 content = prefix + content;
 
+                var payload = {
+                    name: answers.name,
+                    script: content
+                };
+
+                if(answers.addDescription)
+                    payload.description = answers.description;
+
                 request({
-                    body: {
-                        name: answers.name,
-                        script: content
-                    },
+                    body: payload,
                     uri: scriptsEndpoint,
                     method: 'POST',
                     json: true,
-                    auth: {
-                        user: answers.user,
-                        password: answers.password
-                    }
+                    auth: answers.creds
                 }, onResponse);
             }
 
@@ -175,19 +177,20 @@ function publish(fileName, options) {
                         console.error('Authentication failed');
                         process.exit(1);
                     case 409:
-                        if (response.headers['x-conflicting-user'] == answers.user)
-                            return askForPatch(answers.name, {
-                                script: content
-                                    //TODO: add description
-                            }, {
-                                user: answers.user,
-                                password: answers.password
-                            });
+                        if (response.headers['x-conflicting-user'] == answers.creds.user) {
+                            var patch = { script: content };
+
+                            if(answers.addDescription)
+                                patch.description = answers.description;
+
+                            return askForPatch(answers.name, patch, answers.creds);
+                        }
 
                         console.error('A script with that name already exists');
                         process.exit(1);
                     default:
-                        console.error('There was some problem with the server. Try again later.');
+                        console.error('Error: ' + response.body);
+                        process.exit(1);
                 }
             }
         }
@@ -237,10 +240,15 @@ function askForPatch(name, patch, credentials, cb) {
         return cb(null, false);
     });
 
-    function onPatched(err) {
+    function onPatched(err, response) {
         if (err != null) {
             onConnectionProblem();
             return cb(err);
+        }
+
+        if(response.statusCode != 204) {
+            console.error('Error: ' + response.body);
+            process.exit(1);
         }
 
         console.log('Script has been updated successfully');
@@ -318,7 +326,8 @@ function login() {
                 process.exit(1);
             default:
                 deleteStoredCredentials();
-                onConnectionProblem();
+                console.error('Error: ' + response.body);
+                process.exit(1);
         }
     }
 }

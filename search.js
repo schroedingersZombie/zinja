@@ -18,6 +18,11 @@ function search(query) {
             return onConnectionProblem();
         }
 
+        if(response.statusCode != 200) {
+            console.error('Error: ' + response.body);
+            process.exit(1);
+        }
+
         console.log(columns(JSON.parse(body)));
     }
 }

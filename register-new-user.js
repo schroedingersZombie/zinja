@@ -60,9 +60,10 @@ function registerNewUser() {
                 return;
             case 409:
                 console.log('A user with that name already exists');
-                break;
+                process.exit(1);
             default:
-                onConnectionProblem();
+                console.error('Error: ' + response.body);
+                process.exit(1);
         }
     }
 }

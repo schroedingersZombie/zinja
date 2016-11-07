@@ -1,5 +1,5 @@
 const fs = require('fs');
-const cache = require('cache');
+const cache = require('persistent-cache');
 
 const localScripts =  cache({
     name: 'local'
