@@ -120,7 +120,8 @@ function executeScript(script, args) {
             process.exit(exitCode);
         });
 
-        child.on('error', function() {
+        child.on('error', function(error) {
+            console.error(error);
             process.exit(1);
         });
     }
