@@ -1,7 +1,7 @@
 const request = require('request');
 const columns = require('cli-columns');
 
-const scriptsEndpoint = 'http://localhost:8080/scripts';
+const scriptsEndpoint = 'https://api.zinja.io/scripts';
 const onConnectionProblem = require('./connection-problem');
 
 function search(query) {
