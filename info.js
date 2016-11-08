@@ -42,14 +42,14 @@ function info(name) {
 
         if (scriptInfo.description) {
             console.log();
-            console.log('Descrirption');
+            console.log('Description');
             console.log('------------');
             console.log(scriptInfo.description);
         }
 
         console.log();
         console.log('Source');
-        console.log('------');
+        console.log('------------');
         console.log(scriptInfo.script);
     });
 }
