@@ -179,7 +179,7 @@ function publish(fileName, options) {
                             if(answers.addDescription)
                                 patch.description = answers.description;
 
-                            return askForPatch(answers.name, patch, answers.creds);
+                            return askForPatch(answers.creds.user + '/' + answers.name, patch, answers.creds);
                         }
 
                         console.error('A script with that name already exists');
