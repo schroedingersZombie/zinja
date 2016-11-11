@@ -72,6 +72,11 @@ program
     .description('Register a new zinja account')
     .action(registerNewUser);
 
+program
+    .command('clear-cache')
+    .description('Clears the cache for the central zinja repository')
+    .action(clearCache);
+
 program.parse(process.argv);
 
 function toBeImplemented() {
@@ -88,6 +93,10 @@ function register(name, fileName, options) {
 
 function unregister(name) {
     require('./unregister')(name);
+}
+
+function clearCache() {
+    require('./clear-cache')();
 }
 
 function publish(fileName, options) {
