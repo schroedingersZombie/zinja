@@ -6,6 +6,11 @@ const localScripts =  cache({
 });
 
 function register(name, fileName, options) {
+    if(name.indexOf('/') != -1) {
+        console.error('Local scripts names can not contain \'/\'');
+        process.exit(1);
+    }
+
     if (options.string) {
         onFileRead(null, fileName);
     } else {
