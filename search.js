@@ -23,7 +23,12 @@ function search(query) {
             process.exit(1);
         }
 
-        console.log(columns(JSON.parse(body)));
+        var scriptNames = JSON.parse(body);
+
+        if(scriptNames.length > 0)
+            console.log(columns(scriptNames));
+        else
+            console.log('No scripts with a name containing \'' + query + '\' found');
     }
 }
 
