@@ -15,6 +15,23 @@ function onConnectionProblem() {
     process.exit(1);
 }
 
+function handleResponseError(err) {
+    if(err != null)
+        return onConnectionProble();
+}
+
+function handlePotentialScriptResponseError(response) {
+    if(response.statusCode != 200) {
+        if(response.statusCode == 404) {
+            console.error('Script ' + name + ' was not found in the central zinja repository. Try \'zj search\'');
+        } else {
+            onOtherError(response);
+        }
+
+        process.exit(1);
+    }
+}
+
 function onOtherError(response) {
     console.error('Th server responded with an error:');
     console.error(response.statusCode);
@@ -27,26 +44,36 @@ function getCacheName(fullScriptName) {
 }
 
 function fetchRemoteScript(name, cb) {
-    request.get(endpoints.scripts + '/' + name, function(err, response, body) {
-        if(err != null) {
-            return onConnectionProblem();
-        }
+    request.get(endpoints.scripts + '/' + name, onResponse);
 
-        if(response.statusCode != 200) {
-            if(response.statusCode == 404) {
-                console.error('Script ' + name + ' was not found in the central zinja repository. Try \'zj search\'');
-                process.exit(1);
-            } else {
-                onOtherError();
-            }
-        }
+    function onResponse(err, response, body) {
+        handleResponseError(err);
+        handlePotentialScriptResponseError(response);
 
         remoteCache.put(getCacheName(name), body, assertError);
 
         cb(body);
-    });
+    }
 }
 
+function fetchScriptInfo(name, cb) {
+    return request.get({
+        uri: endpoints.scripts + '/' + name + '/info',
+        json: true
+    }, onResponse);
+
+    function onResponse(err, response, body) {
+        handleResponseError(err);
+        handlePotentialScriptResponseError(response);
+
+        remoteCache.put(getCacheName(name), body.script, assertError);
+
+        return cb(body);
+    }
+}
+
+
 module.exports = {
-    fetchRemoteScript: fetchRemoteScript
+    fetchRemoteScript: fetchRemoteScript,
+    fetchScriptInfo: fetchScriptInfo
 };

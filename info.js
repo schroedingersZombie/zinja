@@ -1,10 +1,8 @@
 const columnify = require('columnify');
-const request = require('request');
 const assertError = require('assert').ifError;
 const cache = require('persistent-cache');
 
-const onConnectionProblem = require('./connection-problem');
-const scriptsEndpoint = require('./config').api.scripts;
+const api = require('./api');
 const remoteCache = cache({ duration: 1000 * 3600 * 24 * 7 });
 const localScripts = cache({ name: 'local' });
 
@@ -16,29 +14,9 @@ function info(name) {
     if(isLocalScript(name))
         return localScripts.get(name, onLocalCache);
     else
-        return request.get({
-            uri: scriptsEndpoint + '/' + name + '/info',
-            json: true
-        }, onResponse);
+        return api.fetchScriptInfo(name, onResponse);
 
-    function onResponse(err, response, scriptInfo) {
-        if (err != null) {
-            onConnectionProblem();
-            process.exit(1);
-        }
-
-        if(response.statusCode != 200) {
-            if(response.statusCode == 404) {
-                console.error('Script ' + name + ' was not found in the central zinja repository. Try \'zj search\'');
-            } else {
-                console.error('Error: ' + response.body);
-            }
-
-            process.exit(1);
-        }
-
-        remoteCache.put(name.replace('/', 'u'), scriptInfo.script, assertError);
-
+    function onResponse(scriptInfo) {
         outputScriptInfo({
             'Name:': scriptInfo.name,
             'Author:': scriptInfo.user,
