@@ -4,7 +4,7 @@ const request = require('request');
 const cache = require('persistent-cache');
 const temp = require('temp').track();
 const assertError = require('assert').ifError;
-const execa = require('execa');
+const childProcess = require('child_process');
 
 const onConnectionProblem = require('./connection-problem');
 const localScripts = cache({ name: 'local' });
@@ -109,23 +109,21 @@ function executeScript(script, args) {
             process.exit(1);
         }
 
-        /*var bashArgs = args.join(' ');
-        var command = 'source ' + tempFilePath + ' ' + bashArgs;*/
-
-        var chmodResult = execa.shellSync('chmod +x ' + tempFilePath);
-
-        if(chmodResult.error) {
-            console.error(chmodResult.stderr);
+        try {
+            var chmodResult = childProcess.execSync('chmod +x ' + tempFilePath);
+        } catch(err) {
             console.error('Could not make the script tempfile executable because of:');
-            console.error(chmodResult.error);
+            console.error(err);
             process.exit(1);
         }
 
-        var child = execa(tempFilePath, args);//childProcess.exec(command);
+        /*
+        var child = execa(tempFilePath, args);
 
         child.stdout.pipe(process.stdout);
-        child.stderr.pipe(process.stderr);
+        child.stderr.pipe(process.stderr);*/
 
+        var child = childProcess.spawn(tempFilePath, args, { stdio: 'inherit' });
 
         child.on('exit', function(exitCode) {
             process.exit(exitCode);
