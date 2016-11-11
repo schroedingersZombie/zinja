@@ -1,15 +1,13 @@
 const fs = require('fs');
 const basename = require('path').basename;
-const request = require('request');
 const cache = require('persistent-cache');
 const temp = require('temp').track();
 const assertError = require('assert').ifError;
 const childProcess = require('child_process');
 
-const onConnectionProblem = require('./connection-problem');
 const localScripts = cache({ name: 'local' });
 const remoteCache = cache({ duration: 1000 * 3600 * 24 * 7 });
-const scriptsEndpoint = require('./config').api.scripts;
+const api = require('./api');
 
 function getCacheName(fullScriptName) {
     return fullScriptName.replace('/', '_');
@@ -45,16 +43,12 @@ function fetchScript(name, cb) {
             return cb(err);
 
         if(script === undefined)
-            return fetchRemoteScript(name, onRemote);
+            return api.fetchRemoteScript(name, onRemote);
 
         return cb(null, script);
     }
 
-    function onRemote(err, script) {
-        if(err != null) {
-            return cb(err);
-        }
-
+    function onRemote(script) {
         return cb(null, script);
     }
 }
@@ -69,28 +63,6 @@ function execute(args) {
         }
 
         return executeScript(script, args);
-    });
-}
-
-function fetchRemoteScript(name, cb) {
-    request.get(scriptsEndpoint + '/' + name, function(err, response, body) {
-        if(err != null)
-            return onConnectionProblem();
-
-        if(response.statusCode != 200) {
-            if(response.statusCode == 404) {
-                console.error('Script ' + name + ' was not found in the central zinja repository. Try \'zj search\'');
-            } else {
-                console.error('Error: ' + response.body);
-            }
-
-            //TODO: So something better with the error
-            return cb(response.statusCode);
-        }
-
-        remoteCache.put(getCacheName(name), body, assertError);
-
-        cb(null, body);
     });
 }
 
