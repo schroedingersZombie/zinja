@@ -1,12 +1,11 @@
 const columnify = require('columnify');
 const request = require('request');
 const assertError = require('assert').ifError;
+const cache = require('persistent-cache');
 
 const onConnectionProblem = require('./connection-problem');
 const scriptsEndpoint = require('./config').api.scripts;
-const remoteCache = cache({
-    duration: 1000 * 3600 * 24 * 7
-});
+const remoteCache = cache({ duration: 1000 * 3600 * 24 * 7 });
 
 function info(name) {
     request.get({
@@ -39,7 +38,7 @@ function info(name) {
             showHeaders: false,
             config: {
                 key: {
-                    align: 'right'
+                    align: 'left'
                 }
             }
         }));
