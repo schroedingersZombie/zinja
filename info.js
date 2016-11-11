@@ -34,14 +34,7 @@ function info(name) {
             'Author:': scriptInfo.user
         };
 
-        console.log(columnify(output, {
-            showHeaders: false,
-            config: {
-                key: {
-                    align: 'left'
-                }
-            }
-        }));
+        console.log(columnify(output, { showHeaders: false }));
 
         if (scriptInfo.description) {
             console.log();
