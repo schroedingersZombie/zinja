@@ -14,7 +14,7 @@ var remoteCache = cache({
     duration: 1000 * 3600 * 24 * 7
 });
 
-const scriptsEndpoint = 'https://api.zinja.io/scripts';
+const scriptsEndpoint = require('./config').api.scripts;
 
 function fetchScript(name, cb) {
     localScripts.get(name, onLocalCache);

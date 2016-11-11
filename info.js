@@ -3,7 +3,7 @@ var request = require('request');
 
 var onConnectionProblem = require('./connection-problem');
 
-var scriptsEndpoint = 'https://api.zinja.io/scripts';
+var scriptsEndpoint = require('./config').api.scripts;
 
 function info(name) {
     request.get({

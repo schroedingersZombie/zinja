@@ -3,7 +3,7 @@ const inquirer = require('inquirer');
 
 const onConnectionProblem = require('./connection-problem');
 
-const usersEndpoint = 'https://api.zinja.io/users';
+const usersEndpoint = require('./config').api.users;
 
 function registerNewUser() {
     inquirer.prompt([{

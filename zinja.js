@@ -11,8 +11,8 @@ var assertError = require('assert').ifError;
 
 var onConnectionProblem = require('./connection-problem');
 
-var scriptsEndpoint = 'https://api.zinja.io/scripts';
-var loginEndpoint = 'https://api.zinja.io/login';
+var scriptsEndpoint = require('./config').api.scripts;
+var loginEndpoint = require('./config').api.login;
 
 var settings = cache({
     name: 'settings'
