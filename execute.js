@@ -61,7 +61,6 @@ function execute(args) {
 
     fetchScript(name, function(err, script) {
         if(err != null) {
-            console.error(err);
             return process.exit(1);
         }
 
@@ -77,6 +76,8 @@ function fetchRemoteScript(name, cb) {
         if(response.statusCode != 200) {
             if(response.statusCode == 404) {
                 console.error('Script ' + name + ' was not found in the central zinja repository. Try \'zj search\'');
+            } else {
+                console.error('Error: ' + response.body);
             }
 
             //TODO: So something better with the error
