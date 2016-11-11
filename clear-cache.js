@@ -8,7 +8,7 @@ function clearCache() {
         assertError(err);
 
         console.log('Cache cleared');
-    })
+    });
 }
 
 module.exports = clearCache;
