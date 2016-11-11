@@ -1,39 +1,44 @@
-var fs = require('fs');
-var basename = require('path').basename;
-var request = require('request');
-var cache = require('persistent-cache');
-var temp = require('temp').track();
-var assertError = require('assert').ifError;
-var execa = require('execa');
+const fs = require('fs');
+const basename = require('path').basename;
+const request = require('request');
+const cache = require('persistent-cache');
+const temp = require('temp').track();
+const assertError = require('assert').ifError;
+const execa = require('execa');
 
-var localScripts = cache({
-    name: 'local'
-});
-
-var remoteCache = cache({
-    duration: 1000 * 3600 * 24 * 7
-});
-
+const onConnectionProblem = require('./connection-problem');
+const localScripts = cache({ name: 'local' });
+const remoteCache = cache({ duration: 1000 * 3600 * 24 * 7 });
 const scriptsEndpoint = require('./config').api.scripts;
 
+function getCacheName(fullScriptName) {
+    return fullScriptName.replace('/', '_');
+}
+
+function isLocalScript(name) {
+    return name.indexOf('/') == -1;
+}
+
 function fetchScript(name, cb) {
-    localScripts.get(name, onLocalCache);
+    if(isLocalScript(name)) {
+        return localScripts.get(name, onLocalCache);
+    } else {
+        return remoteCache.get(getCacheName(name), onRemoteCache);
+    }
 
     function onLocalCache(err, script) {
-        if(err != null) {
+        if(err != null)
             return cb(err);
-        }
 
         if(script === undefined)
-            return remoteCache.get(name, onRemoteCache);
+            return cb('Script ' + name + ' was not found in the local repository');
 
         return cb(null, script);
     }
 
     function onRemoteCache(err, script) {
-        if(err) {
+        if(err)
             return cb(err);
-        }
 
         if(script === undefined)
             return fetchRemoteScript(name, onRemote);
@@ -56,6 +61,7 @@ function execute(args) {
 
     fetchScript(name, function(err, script) {
         if(err != null) {
+            console.error(err);
             return process.exit(1);
         }
 
@@ -77,7 +83,7 @@ function fetchRemoteScript(name, cb) {
             return cb(response.statusCode);
         }
 
-        remoteCache.put(name, body, function(err) {});
+        remoteCache.put(getCacheName(name), body, assertError);
 
         cb(null, body);
     });

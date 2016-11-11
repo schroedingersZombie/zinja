@@ -1,24 +1,20 @@
 #! /usr/bin/env node
 
-var fs = require('fs');
+const fs = require('fs');
+const program = require('commander');
+const request = require('request');
+const inquirer = require('inquirer');
+const cache = require('persistent-cache');
+const Promise = require('promise');
+const assertError = require('assert').ifError;
 
-var program = require('commander');
-var request = require('request');
-var inquirer = require('inquirer');
-var cache = require('persistent-cache');
-var Promise = require('promise');
-var assertError = require('assert').ifError;
-
-var onConnectionProblem = require('./connection-problem');
-
-var scriptsEndpoint = require('./config').api.scripts;
-var loginEndpoint = require('./config').api.login;
-
-var settings = cache({
+const onConnectionProblem = require('./connection-problem');
+const scriptsEndpoint = require('./config').api.scripts;
+const loginEndpoint = require('./config').api.login;
+const settings = cache({
     name: 'settings'
 });
 var CREDENDTIALS_KEY = 'credentials';
-
 
 program
     .version('0.1.0')
@@ -96,32 +92,32 @@ function unregister(name) {
 }
 
 function publish(fileName, options) {
-    inquirer.prompt([{
-        message: 'Enter the name the script should be published under:',
-        name: 'name',
-        type: 'input',
-        validate: function(name) {
-            if (!name.match(/^[a-z]+(-[a-z0-9]+)*$/))
+    getCredentials().then(function(creds) {
+        return inquirer.prompt([{
+            message: 'Enter the name the script should be published under: ' + creds.user + '/',
+            name: 'name',
+            type: 'input',
+            validate: function(name) {
+                if (!name.match(/^[a-z]+(-[a-z0-9]+)*$/))
                 return 'Invalid name. Script names can only contain lowercase letters, numbers and dashes and must begin with a letter';
 
-            if (name.length > 60 || name.length < 4)
+                if (name.length > 60 || name.length < 4)
                 return 'Script name must be at lest 4 and at most 60 characters long';
 
-            return true;
-        }
-    }, {
-        message: 'Do you want to add a description to explain how to use the script?',
-        name: 'addDescription',
-        type: 'confirm'
-    }, {
-        message: 'Enter the description (your default editor is used)',
-        name: 'description',
-        type: 'editor',
-        when: function(answers) {
-            return answers.addDescription;
-        }
-    }]).then(function(answers) {
-        return getCredentials().then(function(creds) {
+                return true;
+            }
+        }, {
+            message: 'Do you want to add a description to explain how to use the script?',
+            name: 'addDescription',
+            type: 'confirm'
+        }, {
+            message: 'Enter the description (your default editor is used)',
+            name: 'description',
+            type: 'editor',
+            when: function(answers) {
+                return answers.addDescription;
+            }
+        }]).then(function(answers) {
             answers.creds = creds;
             return answers;
         });
@@ -172,6 +168,7 @@ function publish(fileName, options) {
                 switch (response.statusCode) {
                     case 201:
                         console.log('Successfully published script ' + answers.name);
+                        remoteCache.put(answers.creds.user + '_' + answers.name, content, assertError);
                         break;
                     case 401:
                         console.error('Authentication failed');
@@ -250,6 +247,9 @@ function askForPatch(name, patch, credentials, cb) {
             console.error('Error: ' + response.body);
             process.exit(1);
         }
+
+        if(patch.script)
+            remoteCache.put(answers.creds.user + '_' + answers.name, patch.script, assertError);
 
         console.log('Script has been updated successfully');
     }

@@ -1,9 +1,12 @@
-var columnify = require('columnify');
-var request = require('request');
+const columnify = require('columnify');
+const request = require('request');
+const assertError = require('assert').ifError;
 
-var onConnectionProblem = require('./connection-problem');
-
-var scriptsEndpoint = require('./config').api.scripts;
+const onConnectionProblem = require('./connection-problem');
+const scriptsEndpoint = require('./config').api.scripts;
+const remoteCache = cache({
+    duration: 1000 * 3600 * 24 * 7
+});
 
 function info(name) {
     request.get({
@@ -25,11 +28,12 @@ function info(name) {
             process.exit(1);
         }
 
+        remoteCache.put(name.replace('/', 'u'), scriptInfo.script, assertError);
+
         var output = {
             'Name:': scriptInfo.name,
             'Author:': scriptInfo.user
         };
-
 
         console.log(columnify(output, {
             showHeaders: false,
