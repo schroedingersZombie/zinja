@@ -27,11 +27,15 @@ function fetchScript(name, cb) {
     }
 
     function onLocalCache(err, script) {
-        if(err != null)
+        if(err != null) {
+            console.error(err);
             return cb(err);
+        }
 
-        if(script === undefined)
-            return cb('Script ' + name + ' was not found in the local repository');
+        if(script === undefined) {
+            console.error('Script ' + name + ' was not found in the local repository');
+            process.exit(1);
+        }
 
         return cb(null, script);
     }

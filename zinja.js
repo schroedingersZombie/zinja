@@ -248,7 +248,7 @@ function askForPatch(name, patch, credentials, cb) {
         }
 
         if(patch.script)
-            remoteCache.put(answers.creds.user + '_' + answers.name, patch.script, assertError);
+            remoteCache.put(name.replace('/', '_'), patch.script, assertError);
 
         console.log('Script has been updated successfully');
     }
