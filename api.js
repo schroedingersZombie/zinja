@@ -72,8 +72,31 @@ function fetchScriptInfo(name, cb) {
     }
 }
 
+function postUser(user, cb) {
+    request({
+        body: user,
+        uri: endpoints.users,
+        method: 'POST',
+        json: true
+    }, onResponse);
+
+    function onResponse(err, response) {
+        handleResponseError(err);
+
+        switch (response.statusCode) {
+            case 201:
+                return cb();
+            case 409:
+                console.log('A user with that name already exists');
+                process.exit(1);
+            default:
+                onOtherError(response);
+        }
+    }
+}
 
 module.exports = {
     fetchRemoteScript: fetchRemoteScript,
-    fetchScriptInfo: fetchScriptInfo
+    fetchScriptInfo: fetchScriptInfo,
+    postUser: postUser
 };

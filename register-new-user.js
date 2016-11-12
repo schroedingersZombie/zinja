@@ -1,9 +1,6 @@
-const request = require('request');
 const inquirer = require('inquirer');
 
-const onConnectionProblem = require('./connection-problem');
-
-const usersEndpoint = require('./config').api.users;
+const api = require('./api');
 
 function registerNewUser() {
     inquirer.prompt([{
@@ -38,33 +35,15 @@ function registerNewUser() {
             return /^\S+@\S+$/.test(value) || 'Please enter a valid e-mail address';
         }
     }]).then(function(answers) {
-        request({
-            body: {
-                username: answers.user,
-                password: answers.password,
-                email: answers.email
-            },
-            uri: usersEndpoint,
-            method: 'POST',
-            json: true
+        api.postUser({
+            username: answers.user,
+            password: answers.password,
+            email: answers.email
         }, onResponse);
     });
 
-    function onResponse(err, response) {
-        if (err != null)
-            return onConnectionProblem();
-
-        switch (response.statusCode) {
-            case 201:
-                console.log('User successfully registered. Have fun using zinja!');
-                return;
-            case 409:
-                console.log('A user with that name already exists');
-                process.exit(1);
-            default:
-                console.error('Error: ' + response.body);
-                process.exit(1);
-        }
+    function onResponse() {
+        console.log('User successfully registered. Have fun using zinja!');
     }
 }
 
