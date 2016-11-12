@@ -115,9 +115,42 @@ function searchScripts(query, cb) {
     }
 }
 
+//Callback has boolean parameter to indicate if it needs patch
+function postScript(script, creds, cb) {
+    request({
+        body: script,
+        uri: endpoints.scripts,
+        method: 'POST',
+        json: true,
+        auth: creds
+    }, onResponse);
+
+    function onResponse(err, response) {
+        handleResponseError(err);
+
+        switch (response.statusCode) {
+            case 201:
+                remoteCache.put(creds.user + '_' + script.name, script.script, assertError);
+                return cb(false);
+            case 401:
+                console.error('Authentication failed');
+                process.exit(1);
+            case 409:
+                if (response.headers['x-conflicting-user'] == creds.user)
+                    return cb(true);
+
+                console.error('A script with that name already exists');
+                process.exit(1);
+            default:
+                return onOtherError(response);
+        }
+    }
+}
+
 module.exports = {
     fetchRemoteScript: fetchRemoteScript,
     fetchScriptInfo: fetchScriptInfo,
     postUser: postUser,
-    searchScripts: searchScripts
+    searchScripts: searchScripts,
+    postScript: postScript
 };

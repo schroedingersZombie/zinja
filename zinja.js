@@ -9,6 +9,7 @@ const Promise = require('promise');
 const assertError = require('assert').ifError;
 
 const onConnectionProblem = require('./connection-problem');
+const api = require('./api');
 const scriptsEndpoint = require('./config').api.scripts;
 const loginEndpoint = require('./config').api.login;
 const settings = cache({ name: 'settings' });
@@ -160,42 +161,19 @@ function publish(fileName, options) {
                 if(answers.addDescription)
                     payload.description = answers.description;
 
-                request({
-                    body: payload,
-                    uri: scriptsEndpoint,
-                    method: 'POST',
-                    json: true,
-                    auth: answers.creds
-                }, onResponse);
+                api.postScript(payload, answers.creds, onResponse);
             }
 
-            function onResponse(err, response, body) {
-                if (err != null)
-                    return onConnectionProblem();
+            function onResponse(canOnlyBePatched) {
+                if (canOnlyBePatched) {
+                    var patch = { script: content };
 
-                switch (response.statusCode) {
-                    case 201:
-                        console.log('Successfully published script ' + answers.name);
-                        remoteCache.put(answers.creds.user + '_' + answers.name, content, assertError);
-                        break;
-                    case 401:
-                        console.error('Authentication failed');
-                        process.exit(1);
-                    case 409:
-                        if (response.headers['x-conflicting-user'] == answers.creds.user) {
-                            var patch = { script: content };
+                    if(answers.addDescription)
+                        patch.description = answers.description;
 
-                            if(answers.addDescription)
-                                patch.description = answers.description;
-
-                            return askForPatch(answers.creds.user + '/' + answers.name, patch, answers.creds);
-                        }
-
-                        console.error('A script with that name already exists');
-                        process.exit(1);
-                    default:
-                        console.error('Error: ' + response.body);
-                        process.exit(1);
+                    return askForPatch(answers.creds.user + '/' + answers.name, patch, answers.creds);
+                } else {
+                    console.log('Successfully published script ' + answers.name);
                 }
             }
         }
