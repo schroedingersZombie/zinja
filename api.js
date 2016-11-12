@@ -90,13 +90,34 @@ function postUser(user, cb) {
                 console.log('A user with that name already exists');
                 process.exit(1);
             default:
-                onOtherError(response);
+                return onOtherError(response);
         }
+    }
+}
+
+function searchScripts(query, cb) {
+    request.get({
+        uri: endpoints.scripts,
+        method: 'GET',
+        qs: {
+            q: query
+        },
+        json: true
+    }, onResponse);
+
+    function onResponse(err, response, body) {
+        handleResponseError(err);
+
+        if(response.statusCode != 200)
+            return onOtherError(response);
+
+        cb(body);
     }
 }
 
 module.exports = {
     fetchRemoteScript: fetchRemoteScript,
     fetchScriptInfo: fetchScriptInfo,
-    postUser: postUser
+    postUser: postUser,
+    searchScripts: searchScripts
 };

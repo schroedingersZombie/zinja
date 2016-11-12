@@ -1,30 +1,11 @@
-const request = require('request');
 const columns = require('cli-columns');
 
-const scriptsEndpoint = require('./config').api.scripts;
-const onConnectionProblem = require('./connection-problem');
+const api = require('./api');
 
 function search(query) {
-    request.get({
-        uri: scriptsEndpoint,
-        method: 'GET',
-        qs: {
-            q: query
-        }
-    }, onResponse);
+    api.searchScripts(query, onResponse);
 
-    function onResponse(err, response, body) {
-        if (err != null) {
-            return onConnectionProblem();
-        }
-
-        if(response.statusCode != 200) {
-            console.error('Error: ' + response.body);
-            process.exit(1);
-        }
-
-        var scriptNames = JSON.parse(body);
-
+    function onResponse(scriptNames) {
         if(scriptNames.length > 0)
             console.log(columns(scriptNames));
         else
