@@ -186,12 +186,12 @@ function askForShebang(cb) {
         type: 'list',
         name: 'prefix',
         choices: [{
-            name: 'Add Shebang for bash (if you are publishing a shell script and you do not know what to choose, choose this)',
-            short: 'Add Shebang for bash',
-            value: '#!/bin/bash\n'
-        }, {
-            name: 'Add Shebang for sh',
+            name: 'Add Shebang for sh (default for most shell scripts)',
+            short: 'Add Shebang for sh',
             value: '#!/bin/sh\n'
+        }, {
+            name: 'Add Shebang for bash',
+            value: '#!/bin/bash\n'
         }, new inquirer.Separator(), {
             name: 'I am aware of the consequences and want my script to be executed in the users current shell (do not add a shebang)',
             short: 'Do not add a shebang',
@@ -202,41 +202,17 @@ function askForShebang(cb) {
     });
 }
 
-function askForPatch(name, patch, credentials, cb) {
-    cb = cb || function() {};
-
+function askForPatch(name, patch, credentials) {
     inquirer.prompt([{
         message: 'You already have a script with that name published. Do you want to overwrite it?',
         type: 'confirm',
         name: 'patch'
     }]).then(function(answers) {
-        if (answers.patch) {
-            return request.patch({
-                body: patch,
-                uri: scriptsEndpoint + '/' + name,
-                method: 'PATCH',
-                json: true,
-                auth: credentials
-            }, onPatched);
-        }
-
-        return cb(null, false);
+        if (answers.patch)
+            return api.patchScript(name, patch, credentials, onPatched);
     });
 
-    function onPatched(err, response) {
-        if (err != null) {
-            onConnectionProblem();
-            return cb(err);
-        }
-
-        if(response.statusCode != 204) {
-            console.error('Error: ' + response.body);
-            process.exit(1);
-        }
-
-        if(patch.script)
-            remoteCache.put(name.replace('/', '_'), patch.script, assertError);
-
+    function onPatched() {
         console.log('Script has been updated successfully');
     }
 }

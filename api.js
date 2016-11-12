@@ -147,10 +147,33 @@ function postScript(script, creds, cb) {
     }
 }
 
+function patchScript(name, patch, creds, cb) {
+    return request.patch({
+        body: patch,
+        uri: endpoints.scripts + '/' + name,
+        method: 'PATCH',
+        json: true,
+        auth: creds
+    }, onPatched);
+
+    function onPatched(err, response) {
+        handleResponseError(err);
+
+        if(response.statusCode != 204)
+            return onOtherError(response);
+
+        if(patch.script)
+            remoteCache.put(getCacheName(name), patch.script, assertError);
+
+        return cb();
+    }
+}
+
 module.exports = {
     fetchRemoteScript: fetchRemoteScript,
     fetchScriptInfo: fetchScriptInfo,
     postUser: postUser,
     searchScripts: searchScripts,
-    postScript: postScript
+    postScript: postScript,
+    patchScript: patchScript
 };
