@@ -44,11 +44,6 @@ program
     .action(publish);
 
 program
-    .command('republish <name> <file>')
-    .description('Republishes (updates) the given script to the central zinja repository')
-    .action(toBeImplemented);
-
-program
     .command('search <query>')
     .description('Searches the central zinja repository for scripts matching the query')
     .action(search);
@@ -57,6 +52,11 @@ program
     .command('info <name>')
     .description('Shows the source of and other available information on the specified script')
     .action(info);
+
+program
+    .command('install <name>')
+    .description('Registers the given remote script as local script')
+    .action(install);
 
 program
     .command('login')
@@ -227,6 +227,10 @@ function info(name) {
 
 function search(query) {
     require('./search')(query);
+}
+
+function install(name) {
+    require('./install')(name);
 }
 
 function getCredentials() {
