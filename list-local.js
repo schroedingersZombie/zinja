@@ -1,9 +1,7 @@
 const cache = require('persistent-cache');
 const columns = require('cli-columns');
 
-const localScripts =  cache({
-    name: 'local'
-});
+const localScripts =  require('./local-repository');
 
 function listLocal() {
     localScripts.keys(function (err, keys) {

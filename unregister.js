@@ -1,8 +1,6 @@
 const cache = require('persistent-cache');
 
-const localScripts = cache({
-    name: 'local'
-});
+const localScripts = require('./local-repository');
 
 function unregister(name) {
     localScripts.delete(name, function(err) {

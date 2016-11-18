@@ -3,8 +3,8 @@ const assertError = require('assert').ifError;
 const cache = require('persistent-cache');
 
 const api = require('./api');
-const remoteCache = cache({ duration: 1000 * 3600 * 24 * 7 });
-const localScripts = cache({ name: 'local' });
+const remoteCache = require('./remote-cache');
+const localScripts = require('./local-repository');
 
 function isLocalScript(name) {
     return name.indexOf('/') == -1;

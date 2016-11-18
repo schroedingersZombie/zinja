@@ -1,9 +1,7 @@
 const fs = require('fs');
 const cache = require('persistent-cache');
 
-const localScripts =  cache({
-    name: 'local'
-});
+const localScripts = require('./local-repository');
 
 function register(name, fileName, options) {
     if(name.indexOf('/') != -1) {

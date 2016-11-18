@@ -2,7 +2,7 @@ const request = require('request');
 const cache = require('persistent-cache');
 const assertError = require('assert').ifError;
 
-const remoteCache = cache({ duration: 1000 * 3600 * 24 * 7 });
+const remoteCache = require('./remote-cache');
 const HOST = 'https://api.zinja.io';
 const endpoints = {
     scripts: HOST + '/scripts',

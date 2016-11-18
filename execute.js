@@ -5,8 +5,8 @@ const temp = require('temp').track();
 const assertError = require('assert').ifError;
 const childProcess = require('child_process');
 
-const localScripts = cache({ name: 'local' });
-const remoteCache = cache({ duration: 1000 * 3600 * 24 * 7 });
+const localScripts = require('./local-repository');
+const remoteCache = require('./remote-cache');
 const api = require('./api');
 
 function getCacheName(fullScriptName) {

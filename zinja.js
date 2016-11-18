@@ -13,7 +13,7 @@ const api = require('./api');
 const scriptsEndpoint = require('./config').api.scripts;
 const loginEndpoint = require('./config').api.login;
 const settings = cache({ name: 'settings' });
-const remoteCache = cache({ duration: 1000 * 3600 * 24 * 7 });
+const remoteCache = require('./remote-cache');
 var CREDENDTIALS_KEY = 'credentials';
 
 program
