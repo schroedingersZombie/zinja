@@ -78,6 +78,11 @@ program
     .description('Clears the cache for the central zinja repository')
     .action(clearCache);
 
+program
+    .command('list-local')
+    .description('Lists all scirpts in the local repository')
+    .action(listLocal);
+
 program.parse(process.argv);
 
 function toBeImplemented() {
@@ -318,6 +323,10 @@ function deleteStoredCredentials(cb) {
 
 function registerNewUser() {
     require('./register-new-user')();
+}
+
+function listLocal() {
+    require('./list-local')();
 }
 
 function getStoredCredentials() {
