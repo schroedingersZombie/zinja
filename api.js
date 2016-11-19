@@ -20,7 +20,7 @@ function handleResponseError(err) {
         return onConnectionProble();
 }
 
-function handlePotentialScriptResponseError(response) {
+function handlePotentialScriptResponseError(response, name) {
     if(response.statusCode != 200) {
         if(response.statusCode == 404) {
             console.error('Script ' + name + ' was not found in the central zinja repository. Try \'zj search\'');
@@ -48,7 +48,7 @@ function fetchRemoteScript(name, cb) {
 
     function onResponse(err, response, body) {
         handleResponseError(err);
-        handlePotentialScriptResponseError(response);
+        handlePotentialScriptResponseError(response, name);
 
         remoteCache.put(getCacheName(name), body, assertError);
 
@@ -64,7 +64,7 @@ function fetchScriptInfo(name, cb) {
 
     function onResponse(err, response, body) {
         handleResponseError(err);
-        handlePotentialScriptResponseError(response);
+        handlePotentialScriptResponseError(response, name);
 
         remoteCache.put(getCacheName(name), body.script, assertError);
 
