@@ -33,8 +33,10 @@ function info(name) {
             process.exit(1);
         }
 
-        if(script === undefined)
-            return cb('Script ' + name + ' was not found in the local repository');
+        if(script === undefined) {
+            console.error('Script ' + name + ' was not found in the local repository');
+            process.exit(1);
+        }
 
         outputScriptInfo({
             'Name:': name,
