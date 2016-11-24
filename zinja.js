@@ -113,10 +113,10 @@ function publish(fileName, options) {
             type: 'input',
             validate: function(name) {
                 if (!name.match(/^[a-z]+(-[a-z0-9]+)*$/))
-                return 'Invalid name. Script names can only contain lowercase letters, numbers and dashes and must begin with a letter';
+                    return 'Invalid name. Script names can only contain lowercase letters, numbers and dashes and must begin with a letter';
 
-                if (name.length > 60 || name.length < 4)
-                return 'Script name must be at lest 4 and at most 60 characters long';
+                if (name.length > 60 || name.length == 0)
+                    return 'Script at most 60 characters long';
 
                 return true;
             }
