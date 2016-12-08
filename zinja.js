@@ -28,8 +28,8 @@ program
 
 program
     .command('register <name> <file>')
-    .option('-s, --string', 'Interpret the file argument as the script in string form instead of a file containing the script')
     .description('Registers a script in the local repository')
+    .option('-s, --string', 'Interpret the file argument as the script in string form instead of a file containing the script')
     .action(register);
 
 program
@@ -40,8 +40,17 @@ program
 program
     .command('publish <file>')
     .option('-s, --string', 'Interpret the file argument as the script in string form instead of a file containing the script')
+    .option('-n, --name <name>', 'Name the script should be published under', /^[a-z]+(-[a-z0-9]+)*$/)
+    .option('-d, --desc <desc>', 'Description for the script')
+    .option('-D, --no-desc', 'Do not add a description to the script')
+    .option('-p, --patch', 'Patches an already published script')
     .description('Publishes the given script to the central zinja repository')
     .action(publish);
+
+program
+    .command('unpublish <name>')
+    .description('Removes the given script from the central zinja repository')
+    .action(unpublish);
 
 program
     .command('search <query>')
@@ -106,6 +115,10 @@ function clearCache() {
 }
 
 function publish(fileName, options) {
+    // console.dir(fileName);
+    // for(var i in options) console.log(i);
+    // process.exit(0);
+
     getCredentials().then(function(creds) {
         return inquirer.prompt([{
             message: 'Enter the name the script should be published under: ' + creds.user + '/',
@@ -119,23 +132,34 @@ function publish(fileName, options) {
                     return 'Script at most 60 characters long';
 
                 return true;
+            },
+            when: function () {
+                return !!options.name;
             }
         }, {
             message: 'Do you want to add a description to explain how to use the script?',
             name: 'addDescription',
-            type: 'confirm'
+            type: 'confirm',
+            when: function () {
+                return options.desc == undefined;
+            }
         }, {
             message: 'Enter the description (your default editor is used)',
             name: 'description',
             type: 'editor',
             when: function(answers) {
-                return answers.addDescription;
+                return !!answers.addDescription;
             }
         }]).then(function(answers) {
             answers.creds = creds;
             return answers;
         });
     }).then(function(answers) {
+        answers.name = answers.name || options.name;
+
+        if(!answers.description && !!options.desc)
+            answers.description = options.desc;
+
         if (options.string) {
             onFileRead(null, fileName);
         } else {
@@ -182,6 +206,14 @@ function publish(fileName, options) {
                 }
             }
         }
+    });
+}
+
+function unpublish(name) {
+    getCredentials().then(function (creds) {
+        api.deleteScript(creds.user + '/' + name, creds, function() {
+            console.log('Script ' + creds.user + '/' + name + ' successfully removed from zinja central');
+        });
     });
 }
 
