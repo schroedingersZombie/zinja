@@ -17,7 +17,7 @@ function onConnectionProblem() {
 
 function handleResponseError(err) {
     if(err != null)
-        return onConnectionProble();
+        return onConnectionProblem();
 }
 
 function handlePotentialScriptResponseError(response, name) {
@@ -164,6 +164,26 @@ function patchScript(name, patch, creds, cb) {
 
         if(patch.script)
             remoteCache.put(getCacheName(name), patch.script, assertError);
+
+        return cb();
+    }
+}
+
+function deleteScript(name, creds, cb) {
+    return request({
+        uri: endpoints.scripts + '/' + name,
+        method: 'DELETE',
+        auth: creds
+    }, onDeleted);
+
+    function onDeleted(err, response) {
+        handleResponseError(err);
+        handlePotentialScriptResponseError(response, name);
+
+        if(response.statusCode != 204)
+            return onOtherError(response);
+
+        remoteCache.delete(getCacheName(name), assertError);
 
         return cb();
     }
