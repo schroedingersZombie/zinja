@@ -1,20 +1,20 @@
-const columnify = require('columnify');
-const assertError = require('assert').ifError;
-const cache = require('persistent-cache');
+const columnify = require('columnify')
+const assertError = require('assert').ifError
+const cache = require('persistent-cache')
 
-const api = require('./api');
-const remoteCache = require('./remote-cache');
-const localScripts = require('./local-repository');
+const api = require('./api')
+const remoteCache = require('./remote-cache')
+const localScripts = require('./local-repository')
 
 function isLocalScript(name) {
-    return name.indexOf('/') == -1;
+    return name.indexOf('/') == -1
 }
 
 function info(name) {
     if(isLocalScript(name))
-        return localScripts.get(name, onLocalCache);
+        return localScripts.get(name, onLocalCache)
     else
-        return api.fetchScriptInfo(name, onResponse);
+        return api.fetchScriptInfo(name, onResponse)
 
     function onResponse(scriptInfo) {
         outputScriptInfo({
@@ -24,18 +24,18 @@ function info(name) {
         }, {
             script: scriptInfo.script,
             description: scriptInfo.description
-        });
+        })
     }
 
     function onLocalCache(err, script) {
         if(err != null) {
-            console.error(err);
-            process.exit(1);
+            console.error(err)
+            process.exit(1)
         }
 
         if(script === undefined) {
-            console.error('Script ' + name + ' was not found in the local repository');
-            process.exit(1);
+            console.error('Script ' + name + ' was not found in the local repository')
+            process.exit(1)
         }
 
         outputScriptInfo({
@@ -43,7 +43,7 @@ function info(name) {
             'Source:': 'Local Repository'
         }, {
             script: script
-        });
+        })
     }
 }
 
@@ -51,21 +51,21 @@ function outputScriptInfo(metadata, scriptInfo) {
     var output = {
         'Name:': scriptInfo.name,
         'Author:': scriptInfo.user
-    };
-
-    console.log(columnify(metadata, { showHeaders: false }));
-
-    if (scriptInfo.description) {
-        console.log();
-        console.log('Description');
-        console.log('------------');
-        console.log(scriptInfo.description);
     }
 
-    console.log();
-    console.log('Source');
-    console.log('------------');
-    console.log(scriptInfo.script);
+    console.log(columnify(metadata, { showHeaders: false }))
+
+    if (scriptInfo.description) {
+        console.log()
+        console.log('Description')
+        console.log('------------')
+        console.log(scriptInfo.description)
+    }
+
+    console.log()
+    console.log('Source')
+    console.log('------------')
+    console.log(scriptInfo.script)
 }
 
-module.exports = info;
+module.exports = info
