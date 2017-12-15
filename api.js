@@ -8,7 +8,7 @@ const HOST = 'https://api.zinja.io'
 const endpoints = {
     scripts: HOST + '/scripts',
     users: HOST + '/users',
-    login: HOST + '/login'
+    login: HOST + '/login',
 }
 
 function onConnectionProblem() {
@@ -17,17 +17,17 @@ function onConnectionProblem() {
 }
 
 function handleResponseError(err) {
-    if(err != null)
+    if (err != null)
         return onConnectionProblem()
 }
 
 function handlePotentialScriptResponseError(response, name) {
-    if(response.statusCode != 200) {
-        if(response.statusCode == 404) {
+    if (response.statusCode != 200) {
+        if (response.statusCode == 404)
             console.error('Script ' + name + ' was not found in the central zinja repository. Try \'zj search\'')
-        } else {
+        else
             onOtherError(response)
-        }
+        
 
         process.exit(1)
     }
@@ -60,7 +60,7 @@ function fetchRemoteScript(name, cb) {
 function fetchScriptInfo(name, cb) {
     return request.get({
         uri: endpoints.scripts + '/' + name + '/info',
-        json: true
+        json: true,
     }, onResponse)
 
     function onResponse(err, response, body) {
@@ -78,7 +78,7 @@ function postUser(user, cb) {
         body: user,
         uri: endpoints.users,
         method: 'POST',
-        json: true
+        json: true,
     }, onResponse)
 
     function onResponse(err, response) {
@@ -101,15 +101,15 @@ function searchScripts(query, cb) {
         uri: endpoints.scripts,
         method: 'GET',
         qs: {
-            q: query
+            q: query,
         },
-        json: true
+        json: true,
     }, onResponse)
 
     function onResponse(err, response, body) {
         handleResponseError(err)
 
-        if(response.statusCode != 200)
+        if (response.statusCode != 200)
             return onOtherError(response)
 
         cb(body)
@@ -123,7 +123,7 @@ function postScript(script, creds, cb) {
         uri: endpoints.scripts,
         method: 'POST',
         json: true,
-        auth: creds
+        auth: creds,
     }, onResponse)
 
     function onResponse(err, response) {
@@ -132,6 +132,7 @@ function postScript(script, creds, cb) {
         switch (response.statusCode) {
             case 201:
                 remoteCache.put(creds.user + '_' + script.name, script.script, assertError)
+
                 return cb(false)
             case 401:
                 console.error('Authentication failed')
@@ -154,16 +155,16 @@ function patchScript(name, patch, creds, cb) {
         uri: endpoints.scripts + '/' + name,
         method: 'PATCH',
         json: true,
-        auth: creds
+        auth: creds,
     }, onPatched)
 
     function onPatched(err, response) {
         handleResponseError(err)
 
-        if(response.statusCode != 204)
+        if (response.statusCode != 204)
             return onOtherError(response)
 
-        if(patch.script)
+        if (patch.script)
             remoteCache.put(getCacheName(name), patch.script, assertError)
 
         return cb()
@@ -174,14 +175,14 @@ function deleteScript(name, creds, cb) {
     return request({
         uri: endpoints.scripts + '/' + name,
         method: 'DELETE',
-        auth: creds
+        auth: creds,
     }, onDeleted)
 
     function onDeleted(err, response) {
         handleResponseError(err)
         handlePotentialScriptResponseError(response, name)
 
-        if(response.statusCode != 204)
+        if (response.statusCode != 204)
             return onOtherError(response)
 
         remoteCache.delete(getCacheName(name), assertError)
@@ -196,5 +197,5 @@ module.exports = {
     postUser: postUser,
     searchScripts: searchScripts,
     postScript: postScript,
-    patchScript: patchScript
+    patchScript: patchScript,
 }

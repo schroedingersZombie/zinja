@@ -11,38 +11,38 @@ function isLocalScript(name) {
 }
 
 function info(name) {
-    if(isLocalScript(name))
+    if (isLocalScript(name))
         return localScripts.get(name, onLocalCache)
-    else
-        return api.fetchScriptInfo(name, onResponse)
+
+    return api.fetchScriptInfo(name, onResponse)
 
     function onResponse(scriptInfo) {
         outputScriptInfo({
             'Name:': scriptInfo.name,
             'Author:': scriptInfo.user,
-            'Source:': 'Zinja Central'
+            'Source:': 'Zinja Central',
         }, {
             script: scriptInfo.script,
-            description: scriptInfo.description
+            description: scriptInfo.description,
         })
     }
 
     function onLocalCache(err, script) {
-        if(err != null) {
+        if (err != null) {
             console.error(err)
             process.exit(1)
         }
 
-        if(script === undefined) {
+        if (script == undefined) {
             console.error('Script ' + name + ' was not found in the local repository')
             process.exit(1)
         }
 
         outputScriptInfo({
             'Name:': name,
-            'Source:': 'Local Repository'
+            'Source:': 'Local Repository',
         }, {
-            script: script
+            script: script,
         })
     }
 }
@@ -50,7 +50,7 @@ function info(name) {
 function outputScriptInfo(metadata, scriptInfo) {
     var output = {
         'Name:': scriptInfo.name,
-        'Author:': scriptInfo.user
+        'Author:': scriptInfo.user,
     }
 
     console.log(columnify(metadata, { showHeaders: false }))

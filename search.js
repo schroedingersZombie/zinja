@@ -1,16 +1,16 @@
-const columns = require('cli-columns');
+const columns = require('cli-columns')
 
-const api = require('./api');
+const api = require('./api')
 
 function search(query) {
-    api.searchScripts(query, onResponse);
+    api.searchScripts(query, onResponse)
 
     function onResponse(scriptNames) {
-        if(scriptNames.length > 0)
-            console.log(columns(scriptNames));
+        if (scriptNames.length > 0)
+            console.log(columns(scriptNames))
         else
-            console.log('No scripts with a name containing \'' + query + '\' found');
+            console.log('No scripts with a name containing \'' + query + '\' found')
     }
 }
 
-module.exports = search;
+module.exports = search
