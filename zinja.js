@@ -119,43 +119,44 @@ function publish(fileName, options) {
     // for(var i in options) console.log(i);
     // process.exit(0);
 
-    getCredentials().then(function(creds) {
-        return inquirer.prompt([ {
-            message: 'Enter the name the script should be published under: ' + creds.user + '/',
-            name: 'name',
-            type: 'input',
-            validate: function(name) {
-                if (!name.match(/^[a-z]+(-[a-z0-9]+)*$/))
-                    return 'Invalid name. Script names can only contain lowercase letters, numbers and dashes and must begin with a letter'
+    getCredentials()
+        .then(function(creds) {
+            return inquirer.prompt([ {
+                message: 'Enter the name the script should be published under: ' + creds.user + '/',
+                name: 'name',
+                type: 'input',
+                validate: function(name) {
+                    if (!name.match(/^[a-z]+(-[a-z0-9]+)*$/))
+                        return 'Invalid name. Script names can only contain lowercase letters, numbers and dashes and must begin with a letter'
 
-                if (name.length > 60 || name.length == 0)
-                    return 'Script at most 60 characters long'
+                    if (name.length > 60 || name.length == 0)
+                        return 'Script at most 60 characters long'
 
-                return true
-            },
-            when: function() {
-                return !!options.name
-            },
-        }, {
-            message: 'Do you want to add a description to explain how to use the script?',
-            name: 'addDescription',
-            type: 'confirm',
-            when: function() {
-                return options.desc == undefined
-            },
-        }, {
-            message: 'Enter the description (your default editor is used)',
-            name: 'description',
-            type: 'editor',
-            when: function(answers) {
-                return !!answers.addDescription
-            },
-        } ]).then(function(answers) {
-            answers.creds = creds
+                    return true
+                },
+                when: function() {
+                    return !!options.name
+                },
+            }, {
+                message: 'Do you want to add a description to explain how to use the script?',
+                name: 'addDescription',
+                type: 'confirm',
+                when: function() {
+                    return options.desc == undefined
+                },
+            }, {
+                message: 'Enter the description (your default editor is used)',
+                name: 'description',
+                type: 'editor',
+                when: function(answers) {
+                    return !!answers.addDescription
+                },
+            } ]).then(function(answers) {
+                answers.creds = creds
 
-            return answers
+                return answers
+            })
         })
-    })
         .then(function(answers) {
             answers.name = answers.name || options.name
 
@@ -211,11 +212,11 @@ function publish(fileName, options) {
         })
 }
 
-function unpublish(name) {
-    getCredentials().then(function(creds) {
-        api.deleteScript(creds.user + '/' + name, creds, function() {
-            console.log('Script ' + creds.user + '/' + name + ' successfully removed from zinja central')
-        })
+async function unpublish(name) {
+    const creds = await getCredentials()
+
+    api.deleteScript(creds.user + '/' + name, creds, () => {
+        console.log('Script ' + creds.user + '/' + name + ' successfully removed from zinja central')
     })
 }
 
@@ -272,13 +273,18 @@ function install(name) {
     require('./install')(name)
 }
 
-function getCredentials() {
-    return getStoredCredentials().then(function(creds) {
-        console.log('Found stored credentials for user ' + creds.user)
+async function getCredentials() {
+    let creds
 
-        return creds
-    })
-        .catch(askForCredentials)
+    try {
+        creds = await getStoredCredentials()
+
+        console.log('Found stored credentials for user ' + creds.user)
+    } catch (err) {
+        creds = await askForCredentials()
+    }
+
+    return creds
 }
 
 function askForCredentials(saveWithoutAsking) {
@@ -338,13 +344,13 @@ function login() {
     }
 }
 
-function logout() {
-    getStoredCredentials().then(function() {
+async function logout() {
+    try {
+        await getStoredCredentials()
         deleteStoredCredentials(onLoggedOut)
-    })
-        .catch(function() {
-            console.log('You are not logged in')
-        })
+    } catch (err) {
+        console.log('You are not logged in')
+    }
 
     function onLoggedOut(err) {
         assertError(err)
