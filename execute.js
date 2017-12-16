@@ -54,9 +54,9 @@ function fetchScript(name, cb) {
     }
 }
 
-function execute(args) {
-    var name = args[0]
-    var args = args.slice(1)
+function execute() {
+    const name = process.argv[2]
+    const args = process.argv.slice(3)
 
     fetchScript(name, function(err, script) {
         if (err != null)

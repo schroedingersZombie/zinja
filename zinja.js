@@ -253,7 +253,7 @@ async function askForPatch(name, patch, credentials) {
 }
 
 function execute(args) {
-    require('./execute')(args)
+    require('./execute')()
 }
 
 function info(name) {
