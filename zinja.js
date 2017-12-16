@@ -101,7 +101,6 @@ function toBeImplemented() {
 if (!process.argv.slice(2).length)
     program.outputHelp()
 
-
 function register(name, fileName, options) {
     require('./register')(name, fileName, options)
 }
@@ -114,102 +113,98 @@ function clearCache() {
     require('./clear-cache')()
 }
 
-function publish(fileName, options) {
+async function publish(fileName, options) {
     // console.dir(fileName);
     // for(var i in options) console.log(i);
     // process.exit(0);
 
-    getCredentials()
-        .then(function(creds) {
-            return inquirer.prompt([ {
-                message: 'Enter the name the script should be published under: ' + creds.user + '/',
-                name: 'name',
-                type: 'input',
-                validate: function(name) {
-                    if (!name.match(/^[a-z]+(-[a-z0-9]+)*$/))
-                        return 'Invalid name. Script names can only contain lowercase letters, numbers and dashes and must begin with a letter'
+    const creds = await getCredentials()
 
-                    if (name.length > 60 || name.length == 0)
-                        return 'Script at most 60 characters long'
+    const answers = await inquirer.prompt([{
+            message: 'Enter the name the script should be published under: ' + creds.user + '/',
+            name: 'name',
+            type: 'input',
+            validate: function(name) {
+                if (!name.match(/^[a-z]+(-[a-z0-9]+)*$/))
+                    return 'Invalid name. Script names can only contain lowercase letters, numbers and dashes and must begin with a letter'
 
-                    return true
-                },
-                when: function() {
-                    return !!options.name
-                },
-            }, {
-                message: 'Do you want to add a description to explain how to use the script?',
-                name: 'addDescription',
-                type: 'confirm',
-                when: function() {
-                    return options.desc == undefined
-                },
-            }, {
-                message: 'Enter the description (your default editor is used)',
-                name: 'description',
-                type: 'editor',
-                when: function(answers) {
-                    return !!answers.addDescription
-                },
-            } ]).then(function(answers) {
-                answers.creds = creds
+                if (name.length > 60 || name.length == 0)
+                    return 'Script at most 60 characters long'
 
-                return answers
-            })
-        })
-        .then(function(answers) {
-            answers.name = answers.name || options.name
+                return true
+            },
+            when: function() {
+                return !!options.name
+            },
+        }, {
+            message: 'Do you want to add a description to explain how to use the script?',
+            name: 'addDescription',
+            type: 'confirm',
+            when: function() {
+                return options.desc == undefined
+            },
+        }, {
+            message: 'Enter the description (your default editor is used)',
+            name: 'description',
+            type: 'editor',
+            when: function(answers) {
+                return !!answers.addDescription
+            },
+        }
+    ])
 
-            if (!answers.description && !!options.desc)
-                answers.description = options.desc
+    answers.creds = creds
+    answers.name = answers.name || options.name
 
-            if (options.string)
-                onFileRead(null, fileName)
-            else
-                fs.readFile(fileName, 'utf8', onFileRead)
+    if (!answers.description && !!options.desc)
+        answers.description = options.desc
+
+    if (options.string)
+        onFileRead(null, fileName)
+    else
+        fs.readFile(fileName, 'utf8', onFileRead)
 
 
-            function onFileRead(err, content) {
-                if (err != null) {
-                    console.error('Could not read file ' + fileName)
-                    process.exit(1)
-                }
+    function onFileRead(err, content) {
+        if (err != null) {
+            console.error('Could not read file ' + fileName)
+            process.exit(1)
+        }
 
-                if (!content.startsWith('#!'))
-                    askForShebang(addPrefixAndDoRequest)
-                else
-                    addPrefixAndDoRequest(null, '')
+        if (!content.startsWith('#!'))
+            askForShebang(addPrefixAndDoRequest)
+        else
+            addPrefixAndDoRequest(null, '')
 
-                function addPrefixAndDoRequest(err, prefix) {
-                    assertError(err)
+        function addPrefixAndDoRequest(err, prefix) {
+            assertError(err)
 
-                    content = prefix + content
+            content = prefix + content
 
-                    var payload = {
-                        name: answers.name,
-                        script: content,
-                    }
-
-                    if (answers.addDescription)
-                        payload.description = answers.description
-
-                    api.postScript(payload, answers.creds, onResponse)
-                }
-
-                function onResponse(canOnlyBePatched) {
-                    if (canOnlyBePatched) {
-                        var patch = { script: content }
-
-                        if (answers.addDescription)
-                            patch.description = answers.description
-
-                        return askForPatch(answers.creds.user + '/' + answers.name, patch, answers.creds)
-                    }
-
-                    console.log('Successfully published script ' + answers.name)
-                }
+            var payload = {
+                name: answers.name,
+                script: content,
             }
-        })
+
+            if (answers.addDescription)
+                payload.description = answers.description
+
+            api.postScript(payload, answers.creds, onResponse)
+        }
+
+        function onResponse(canOnlyBePatched) {
+            if (canOnlyBePatched) {
+                var patch = { script: content }
+
+                if (answers.addDescription)
+                    patch.description = answers.description
+
+                return askForPatch(answers.creds.user + '/' + answers.name, patch, answers.creds)
+            }
+
+            console.log('Successfully published script ' + answers.name)
+        }
+    }
 }
 
 async function unpublish(name) {
@@ -220,8 +215,8 @@ async function unpublish(name) {
     })
 }
 
-function askForShebang(cb) {
-    inquirer.prompt([ {
+async function askForShebang(cb) {
+    const answers = await inquirer.prompt([ {
         message: 'Your script does not have a shebang (#!/some/interpreter). A shebang makes sure that your script is always being run with the same interpreter, to avoid incompatibility issues (e.g. betweegn zsh and bash).\nWhat do you want to do?',
         type: 'list',
         name: 'prefix',
@@ -237,20 +232,20 @@ function askForShebang(cb) {
             short: 'Do not add a shebang',
             value: '',
         } ],
-    } ]).then(function(answers) {
-        cb(null, answers.prefix)
-    })
+    }])
+
+    cb(null, answers.prefix)
 }
 
-function askForPatch(name, patch, credentials) {
-    inquirer.prompt([ {
+async function askForPatch(name, patch, credentials) {
+    const answers = await inquirer.prompt([ {
         message: 'You already have a script with that name published. Do you want to overwrite it?',
         type: 'confirm',
         name: 'patch',
-    } ]).then(function(answers) {
-        if (answers.patch)
-            return api.patchScript(name, patch, credentials, onPatched)
-    })
+    } ])
+
+    if (answers.patch)
+        return api.patchScript(name, patch, credentials, onPatched)
 
     function onPatched() {
         console.log('Script has been updated successfully')
@@ -287,43 +282,45 @@ async function getCredentials() {
     return creds
 }
 
-function askForCredentials(saveWithoutAsking) {
+async function askForCredentials(saveWithoutAsking) {
     console.log('Enter your credentials (if you do not have an account yet, run zj register-new-user)')
 
     //TODO: Ask to save credentials
 
-    return inquirer.prompt([ {
-        message: 'Username:',
-        name: 'user',
-        type: 'input',
-    }, {
-        message: 'Password:',
-        name: 'password',
-        type: 'password',
-    }, {
-        message: 'Should those credentials be stored so you do not have to enter them again?',
-        name: 'shouldSave',
-        type: 'confirm',
-        when: !saveWithoutAsking,
-    } ]).then(function(creds) {
-        if (saveWithoutAsking || creds.shouldSave)
-            settings.put(CREDENDTIALS_KEY, creds.user + ':' + creds.password, assertError)
+    const creds = await inquirer.prompt([ {
+            message: 'Username:',
+            name: 'user',
+            type: 'input',
+        }, {
+            message: 'Password:',
+            name: 'password',
+            type: 'password',
+        }, {
+            message: 'Should those credentials be stored so you do not have to enter them again?',
+            name: 'shouldSave',
+            type: 'confirm',
+            when: !saveWithoutAsking,
+        }
+    ])
 
+    if (saveWithoutAsking || creds.shouldSave)
+        settings.put(CREDENDTIALS_KEY, creds.user + ':' + creds.password, assertError)
 
-        delete creds.shouldSave
+    delete creds.shouldSave
 
-        return creds
-    })
+    return creds
 }
 
-function login() {
-    askForCredentials(true).then(function(creds) {
-        request({
+async function login() {
+    const creds = await askForCredentials(true)
+
+    request({
             uri: loginEndpoint,
             method: 'GET',
             auth: creds,
-        }, onResponse)
-    })
+        },
+        onResponse
+    )
 
     function onResponse(err, response) {
         if (err)
