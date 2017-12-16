@@ -58,10 +58,9 @@ function execute() {
     const name = process.argv[2]
     const args = process.argv.slice(3)
 
-    fetchScript(name, function(err, script) {
+    fetchScript(name, (err, script) => {
         if (err != null)
             return process.exit(1)
-
 
         return executeScript(script, args)
     })
@@ -98,12 +97,11 @@ function executeScript(script, args) {
 
         var child = childProcess.spawn(tempFilePath, args, { stdio: 'inherit' })
 
-        child.on('exit', function(exitCode) {
-            process.exit(exitCode)
-        })
+        child.on('exit', exitCode => process.exit(exitCode) )
 
-        child.on('error', function(error) {
+        child.on('error', error => {
             console.error(error)
+
             process.exit(1)
         })
     }
