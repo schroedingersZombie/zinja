@@ -22,12 +22,11 @@ function handleResponseError(err) {
 }
 
 function handlePotentialScriptResponseError(response, name) {
-    if (response.statusCode != 200) {
+    if (!response.statusCode.toString().startsWith('2')) {
         if (response.statusCode == 404)
             console.error('Script ' + name + ' was not found in the central zinja repository. Try \'zj search\'')
         else
             onOtherError(response)
-        
 
         process.exit(1)
     }
@@ -192,10 +191,11 @@ function deleteScript(name, creds, cb) {
 }
 
 module.exports = {
-    fetchRemoteScript: fetchRemoteScript,
-    fetchScriptInfo: fetchScriptInfo,
-    postUser: postUser,
-    searchScripts: searchScripts,
-    postScript: postScript,
-    patchScript: patchScript,
+    fetchRemoteScript,
+    fetchScriptInfo,
+    postUser,
+    searchScripts,
+    postScript,
+    patchScript,
+    deleteScript,
 }

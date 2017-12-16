@@ -43,7 +43,7 @@ function fetchScript(name, cb) {
         if (err)
             return cb(err)
 
-        if (angular.isUndefined(script))
+        if (script == undefined)
             return api.fetchRemoteScript(name, onRemote)
 
         return cb(null, script)
