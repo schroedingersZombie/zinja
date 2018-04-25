@@ -2,7 +2,7 @@ const inquirer = require('inquirer')
 
 const api = require('./api')
 
-async function registerNewUser() {
+export async function registerNewUser() {
     const answers = await inquirer.prompt([{
             message: 'Username:',
             name: 'user',
@@ -49,5 +49,3 @@ async function registerNewUser() {
         console.log('User successfully registered. Have fun using zinja!')
     }
 }
-
-module.exports = registerNewUser

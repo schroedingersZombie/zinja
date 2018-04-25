@@ -3,12 +3,10 @@ const assertError = require('assert').ifError
 
 const remoteCache = require('./remote-cache')
 
-function clearCache() {
+export function clearCache() {
     remoteCache.unlink(err => {
         assertError(err)
 
         console.log('Cache cleared')
     })
 }
-
-module.exports = clearCache

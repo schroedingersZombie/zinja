@@ -54,7 +54,7 @@ function fetchScript(name, cb) {
     }
 }
 
-function execute() {
+export function execute() {
     const name = process.argv[2]
     const args = process.argv.slice(3)
 
@@ -106,5 +106,3 @@ function executeScript(script, args) {
         })
     }
 }
-
-module.exports = execute

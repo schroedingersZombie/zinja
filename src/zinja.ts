@@ -1,20 +1,22 @@
 #! /usr/bin/env node
 
-const fs = require('fs')
-const program = require('commander')
-const request = require('request')
-const inquirer = require('inquirer')
-const cache = require('persistent-cache')
-const Promise = require('promise')
-const assertError = require('assert').ifError
+import { readFile } from 'fs'
+import * as program from 'commander'
+import * as request from 'request'
+import * as inquirer from 'inquirer'
+import { ifError as assertError } from 'assert'
+import { cache } from './persistent-cache'
+import { onConnectionProblem } from './connection-problem'
+import { deleteScript, patchScript, postScript, ScriptPatch, Credentials, Script } from './api'
+import { config } from './config'
+import { remoteCache } from './remote-cache'
 
-const onConnectionProblem = require('./connection-problem')
-const api = require('./api')
-const scriptsEndpoint = require('./config').api.scripts
-const loginEndpoint = require('./config').api.login
+const scriptsEndpoint = config.api.scripts
+const loginEndpoint = config.api.login
+
 const settings = cache({ name: 'settings' })
-const remoteCache = require('./remote-cache')
-var CREDENDTIALS_KEY = 'credentials'
+const CREDENDTIALS_KEY = 'credentials'
+const SCRIPT_NAME_REGEX = /^[a-z]+(-[a-z0-9]+)*$/
 
 program
     .version('0.1.0')
@@ -124,32 +126,26 @@ async function publish(fileName, options) {
             message: 'Enter the name the script should be published under: ' + creds.user + '/',
             name: 'name',
             type: 'input',
-            validate: function(name) {
-                if (!name.match(/^[a-z]+(-[a-z0-9]+)*$/))
+            validate: (name: string) => {
+                if (!name.match(SCRIPT_NAME_REGEX))
                     return 'Invalid name. Script names can only contain lowercase letters, numbers and dashes and must begin with a letter'
 
                 if (name.length > 60 || name.length == 0)
-                    return 'Script at most 60 characters long'
+                    return 'Name must be between 1 and 60 characters long'
 
                 return true
             },
-            when: function() {
-                return !!options.name
-            },
+            when: () => !!options.name,
         }, {
             message: 'Do you want to add a description to explain how to use the script?',
             name: 'addDescription',
             type: 'confirm',
-            when: function() {
-                return options.desc == undefined
-            },
+            when: () => options.desc == undefined,
         }, {
             message: 'Enter the description (your default editor is used)',
             name: 'description',
             type: 'editor',
-            when: function(answers) {
-                return !!answers.addDescription
-            },
+            when: answers => !!answers.addDescription,
         }
     ])
 
@@ -162,7 +158,7 @@ async function publish(fileName, options) {
     if (options.string)
         onFileRead(null, fileName)
     else
-        fs.readFile(fileName, 'utf8', onFileRead)
+        readFile(fileName, 'utf8', onFileRead)
 
 
     function onFileRead(err, content) {
@@ -176,47 +172,48 @@ async function publish(fileName, options) {
         else
             addPrefixAndDoRequest(null, '')
 
-        function addPrefixAndDoRequest(err, prefix) {
+        function addPrefixAndDoRequest(err, prefix: string) {
             assertError(err)
 
             content = prefix + content
 
-            var payload = {
+            const scriptToPost: Script = {
                 name: answers.name,
                 script: content,
             }
 
             if (answers.addDescription)
-                payload.description = answers.description
+                scriptToPost.description = answers.description
 
-            api.postScript(payload, answers.creds, onResponse)
+            postScript(scriptToPost, answers.creds, onResponse)
         }
 
-        function onResponse(canOnlyBePatched) {
+        function onResponse(canOnlyBePatched: boolean) {
             if (canOnlyBePatched) {
-                var patch = { script: content }
+                const patch: ScriptPatch = { script: content }
 
                 if (answers.addDescription)
                     patch.description = answers.description
 
-                return askForPatch(answers.creds.user + '/' + answers.name, patch, answers.creds)
+                return askForPatch(`${answers.creds.user}/${answers.name}`, patch, answers.creds)
             }
 
-            console.log('Successfully published script ' + answers.name)
+            console.log(`Successfully published script ${answers.name}`)
         }
     }
 }
 
-async function unpublish(name) {
+async function unpublish(name: string) {
     const creds = await getCredentials()
+    const fullScriptName = `${creds.user}/${name}`
 
-    api.deleteScript(creds.user + '/' + name, creds, () => {
-        console.log('Script ' + creds.user + '/' + name + ' successfully removed from zinja central')
+    deleteScript(fullScriptName, creds, () => {
+        console.log(`Script ${fullScriptName} successfully removed from zinja central`)
     })
 }
 
 async function askForShebang(cb) {
-    const answers = await inquirer.prompt([ {
+    const answers = await inquirer.prompt([{
         message: 'Your script does not have a shebang (#!/some/interpreter). A shebang makes sure that your script is always being run with the same interpreter, to avoid incompatibility issues (e.g. betweegn zsh and bash).\nWhat do you want to do?',
         type: 'list',
         name: 'prefix',
@@ -237,7 +234,7 @@ async function askForShebang(cb) {
     cb(null, answers.prefix)
 }
 
-async function askForPatch(name, patch, credentials) {
+async function askForPatch(name: string, patch: ScriptPatch, credentials: Credentials) {
     const answers = await inquirer.prompt([ {
         message: 'You already have a script with that name published. Do you want to overwrite it?',
         type: 'confirm',
@@ -245,11 +242,7 @@ async function askForPatch(name, patch, credentials) {
     } ])
 
     if (answers.patch)
-        return api.patchScript(name, patch, credentials, onPatched)
-
-    function onPatched() {
-        console.log('Script has been updated successfully')
-    }
+        return patchScript(name, patch, credentials, () => { console.log('Script has been updated successfully') })
 }
 
 function execute(args) {
@@ -268,13 +261,13 @@ function install(name) {
     require('./install')(name)
 }
 
-async function getCredentials() {
-    let creds
+async function getCredentials(): Promise<Credentials> {
+    let creds: Credentials
 
     try {
         creds = await getStoredCredentials()
 
-        console.log('Found stored credentials for user ' + creds.user)
+        console.log(`Found stored credentials for user ${creds.user}`)
     } catch (err) {
         creds = await askForCredentials()
     }
@@ -282,7 +275,7 @@ async function getCredentials() {
     return creds
 }
 
-async function askForCredentials(saveWithoutAsking) {
+async function askForCredentials(saveWithoutAsking = false): Promise<Credentials> {
     console.log('Enter your credentials (if you do not have an account yet, run zj register-new-user)')
 
     //TODO: Ask to save credentials
@@ -356,7 +349,7 @@ async function logout() {
     }
 }
 
-function deleteStoredCredentials(cb) {
+function deleteStoredCredentials(cb = assertError) {
     settings.delete(CREDENDTIALS_KEY, cb)
 }
 
@@ -368,7 +361,7 @@ function listLocal() {
     require('./list-local')()
 }
 
-function getStoredCredentials() {
+function getStoredCredentials(): Promise<Credentials> {
     return new Promise(function(resolve, reject) {
         settings.get(CREDENDTIALS_KEY, function(err, credentials) {
             if (!credentials)

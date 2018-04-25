@@ -1,6 +1,6 @@
 const api = require('./api')
 
-function install(name) {
+export function install(name) {
     api.fetchRemoteScript(name, onFetched)
 
     function onFetched(script) {
@@ -11,5 +11,3 @@ function install(name) {
         )
     }
 }
-
-module.exports = install

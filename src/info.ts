@@ -10,7 +10,7 @@ function isLocalScript(name) {
     return name.indexOf('/') == -1
 }
 
-function info(name) {
+export function info(name) {
     if (isLocalScript(name))
         return localScripts.get(name, onLocalCache)
 
@@ -67,5 +67,3 @@ function outputScriptInfo(metadata, scriptInfo) {
     console.log('------------')
     console.log(scriptInfo.script)
 }
-
-module.exports = info

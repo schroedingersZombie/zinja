@@ -2,7 +2,7 @@ const columns = require('cli-columns')
 
 const api = require('./api')
 
-function search(query) {
+export function search(query) {
     api.searchScripts(query, onResponse)
 
     function onResponse(scriptNames) {
@@ -12,5 +12,3 @@ function search(query) {
             console.log('No scripts with a name containing \'' + query + '\' found')
     }
 }
-
-module.exports = search

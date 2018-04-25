@@ -17,17 +17,19 @@
   "homepage": "http://zinja.io",
   "preferGlobal": true,
   "bin": {
-    "zinja": "zinja.js",
-    "zj": "zinja.js"
+    "zinja": "dist/zinja.js",
+    "zj": "dist/zinja.js"
   },
   "dependencies": {
+    "@types/node": "^9.6.6",
+    "@types/request": "^2.47.0",
     "cli-columns": "^1.0.6",
     "columnify": "^1.5.4",
-    "commander": "^2.9.0",
-    "inquirer": "^1.2.2",
-    "persistent-cache": "^1.1.0",
+    "commander": "^2.15.1",
+    "inquirer": "^5.2.0",
     "promise": "^7.1.1",
-    "request": "^2.72.0",
-    "temp": "^0.8.3"
+    "request": "^2.85.0",
+    "temp": "^0.8.3",
+    "typescript": "^2.8.3"
   }
 }

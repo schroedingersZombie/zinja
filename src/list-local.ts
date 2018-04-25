@@ -3,7 +3,7 @@ const columns = require('cli-columns')
 
 const localScripts = require('./local-repository')
 
-function listLocal() {
+export function listLocal() {
     localScripts.keys(function(err, keys) {
         if (keys.length == 0)
             return console.log('You have no scripts in your local respository')
@@ -11,5 +11,3 @@ function listLocal() {
         console.log(columns(keys))
     })
 }
-
-module.exports = listLocal

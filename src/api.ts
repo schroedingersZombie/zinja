@@ -1,14 +1,34 @@
-const request = require('request')
-const cache = require('persistent-cache')
-const assertError = require('assert').ifError
+import * as request from 'request'
+import * as cache from './persistent-cache'
+import { ifError } from 'assert'
 
-const localScripts = require('./local-repository')
-const remoteCache = require('./remote-cache')
+import { localRepository } from './local-repository'
+import { remoteCache } from './remote-cache'
+
 const HOST = 'https://api.zinja.io'
 const endpoints = {
     scripts: HOST + '/scripts',
     users: HOST + '/users',
     login: HOST + '/login',
+}
+
+export interface Script {
+    name: string
+    script: string
+    description?: string
+    user?: string
+}
+
+export interface ScriptPatch {
+    name?: string
+    script?: string
+    description?: string
+    user?: string
+}
+
+export interface Credentials {
+    user: string
+    password: string
 }
 
 function onConnectionProblem() {
@@ -23,7 +43,7 @@ function handleResponseError(err) {
 
 function handlePotentialScriptResponseError(response, name) {
     if (!response.statusCode.toString().startsWith('2')) {
-        if (response.statusCode == 404)
+        if (response.statusCode === 404)
             console.error('Script ' + name + ' was not found in the central zinja repository. Try \'zj search\'')
         else
             onOtherError(response)
@@ -33,7 +53,7 @@ function handlePotentialScriptResponseError(response, name) {
 }
 
 function onOtherError(response) {
-    console.error('Th server responded with an error:')
+    console.error('The server responded with an error:')
     console.error(response.statusCode)
     console.error(response.body)
     process.exit(1)
@@ -43,20 +63,20 @@ function getCacheName(fullScriptName) {
     return fullScriptName.replace('/', '_')
 }
 
-function fetchRemoteScript(name, cb) {
+export function fetchRemoteScript(name, cb) {
     request.get(endpoints.scripts + '/' + name, onResponse)
 
     function onResponse(err, response, body) {
         handleResponseError(err)
         handlePotentialScriptResponseError(response, name)
 
-        remoteCache.put(getCacheName(name), body, assertError)
+        remoteCache.put(getCacheName(name), body, ifError)
 
         cb(body)
     }
 }
 
-function fetchScriptInfo(name, cb) {
+export function fetchScriptInfo(name, cb) {
     return request.get({
         uri: endpoints.scripts + '/' + name + '/info',
         json: true,
@@ -66,13 +86,13 @@ function fetchScriptInfo(name, cb) {
         handleResponseError(err)
         handlePotentialScriptResponseError(response, name)
 
-        remoteCache.put(getCacheName(name), body.script, assertError)
+        remoteCache.put(getCacheName(name), body.script, ifError)
 
         return cb(body)
     }
 }
 
-function postUser(user, cb) {
+export function postUser(user, cb) {
     request({
         body: user,
         uri: endpoints.users,
@@ -95,7 +115,7 @@ function postUser(user, cb) {
     }
 }
 
-function searchScripts(query, cb) {
+export function searchScripts(query, cb) {
     request.get({
         uri: endpoints.scripts,
         method: 'GET',
@@ -108,15 +128,15 @@ function searchScripts(query, cb) {
     function onResponse(err, response, body) {
         handleResponseError(err)
 
-        if (response.statusCode != 200)
+        if (response.statusCode !== 200)
             return onOtherError(response)
 
         cb(body)
     }
 }
 
-//Callback has boolean parameter to indicate if it needs patch
-function postScript(script, creds, cb) {
+// Callback has boolean parameter to indicate if it needs patch
+export function postScript(script: Script, creds: Credentials, cb) {
     request({
         body: script,
         uri: endpoints.scripts,
@@ -130,14 +150,14 @@ function postScript(script, creds, cb) {
 
         switch (response.statusCode) {
             case 201:
-                remoteCache.put(creds.user + '_' + script.name, script.script, assertError)
+                remoteCache.put(creds.user + '_' + script.name, script.script, ifError)
 
                 return cb(false)
             case 401:
                 console.error('Authentication failed')
                 process.exit(1)
             case 409:
-                if (response.headers['x-conflicting-user'] == creds.user)
+                if (response.headers['x-conflicting-user'] === creds.user)
                     return cb(true)
 
                 console.error('A script with that name already exists')
@@ -148,7 +168,7 @@ function postScript(script, creds, cb) {
     }
 }
 
-function patchScript(name, patch, creds, cb) {
+export function patchScript(name: string, patch: ScriptPatch, creds: Credentials, cb) {
     return request.patch({
         body: patch,
         uri: endpoints.scripts + '/' + name,
@@ -160,17 +180,17 @@ function patchScript(name, patch, creds, cb) {
     function onPatched(err, response) {
         handleResponseError(err)
 
-        if (response.statusCode != 204)
+        if (response.statusCode !== 204)
             return onOtherError(response)
 
         if (patch.script)
-            remoteCache.put(getCacheName(name), patch.script, assertError)
+            remoteCache.put(getCacheName(name), patch.script, ifError)
 
         return cb()
     }
 }
 
-function deleteScript(name, creds, cb) {
+export function deleteScript(name, creds: Credentials, cb) {
     return request({
         uri: endpoints.scripts + '/' + name,
         method: 'DELETE',
@@ -181,16 +201,16 @@ function deleteScript(name, creds, cb) {
         handleResponseError(err)
         handlePotentialScriptResponseError(response, name)
 
-        if (response.statusCode != 204)
+        if (response.statusCode !== 204)
             return onOtherError(response)
 
-        remoteCache.delete(getCacheName(name), assertError)
+        remoteCache.delete(getCacheName(name), ifError)
 
         return cb()
     }
 }
 
-module.exports = {
+export default {
     fetchRemoteScript,
     fetchScriptInfo,
     postUser,
