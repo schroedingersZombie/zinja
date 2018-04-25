@@ -1,10 +1,9 @@
-const fs = require('fs')
-const cache = require('persistent-cache')
+import { cache } from './persistent-cache'
+import { readFile } from 'fs'
+import { localRepository } from './local-repository'
 
-const localScripts = require('./local-repository')
-
-export function register(name, fileName, options) {
-    if (name.indexOf('/') != -1) {
+export function register(name: string, fileName: string, options: RegisterOptions) {
+    if (name.includes('/')) {
         console.error('Local scripts names can not contain \'/\'')
         process.exit(1)
     }
@@ -12,8 +11,7 @@ export function register(name, fileName, options) {
     if (options.string)
         onFileRead(null, fileName)
     else
-        fs.readFile(fileName, 'utf8', onFileRead)
-    
+        readFile(fileName, 'utf8', onFileRead)
 
     function onFileRead(err, content) {
         if (err != null) {
@@ -21,7 +19,7 @@ export function register(name, fileName, options) {
             process.exit(1)
         }
 
-        localScripts.put(name, content, onLocalCacheWritten)
+        localRepository.put(name, content, onLocalCacheWritten)
     }
 
     function onLocalCacheWritten(err) {
@@ -32,4 +30,8 @@ export function register(name, fileName, options) {
 
         console.log('Script locally registered as ' + name)
     }
+}
+
+export interface RegisterOptions {
+    string?: boolean
 }

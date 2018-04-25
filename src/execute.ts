@@ -1,28 +1,26 @@
-const fs = require('fs')
-const basename = require('path').basename
-const cache = require('persistent-cache')
-const temp = require('temp').track()
-const assertError = require('assert').ifError
-const childProcess = require('child_process')
+import { writeFile } from 'fs'
+import { cache } from './persistent-cache'
+import { execSync, spawn } from 'child_process'
+import { localRepository } from './local-repository'
+import { remoteCache } from './remote-cache'
+import { fetchRemoteScript } from './api'
 
-const localScripts = require('./local-repository')
-const remoteCache = require('./remote-cache')
-const api = require('./api')
+import * as temp from 'temp'
+temp.track()
 
-function getCacheName(fullScriptName) {
+function getCacheName(fullScriptName: string): string {
     return fullScriptName.replace('/', '_')
 }
 
-function isLocalScript(name) {
-    return name.indexOf('/') == -1
+function isLocalScript(name: string): boolean {
+    return !name.includes('/')
 }
 
-function fetchScript(name, cb) {
+function fetchScript(name: string, cb) {
     if (isLocalScript(name))
-        return localScripts.get(name, onLocalCache)
+        return localRepository.get(name, onLocalCache)
 
     return remoteCache.get(getCacheName(name), onRemoteCache)
-
 
     function onLocalCache(err, script) {
         if (err != null) {
@@ -31,7 +29,7 @@ function fetchScript(name, cb) {
             return cb(err)
         }
 
-        if (script == undefined) {
+        if (script === undefined) {
             console.error('Script ' + name + ' was not found in the local repository')
             process.exit(1)
         }
@@ -43,8 +41,8 @@ function fetchScript(name, cb) {
         if (err)
             return cb(err)
 
-        if (script == undefined)
-            return api.fetchRemoteScript(name, onRemote)
+        if (script === undefined)
+            return fetchRemoteScript(name, onRemote)
 
         return cb(null, script)
     }
@@ -67,11 +65,11 @@ export function execute() {
 }
 
 function executeScript(script, args) {
-    var tempFilePath = ''
+    let tempFilePath = ''
 
     temp.open('zinja', function tempFileCreated(err, tmpFile) {
         tempFilePath = tmpFile.path
-        fs.writeFile(tempFilePath, script, onFileWritten)
+        writeFile(tempFilePath, script, onFileWritten)
     })
 
     function onFileWritten(err) {
@@ -82,7 +80,7 @@ function executeScript(script, args) {
         }
 
         try {
-            var chmodResult = childProcess.execSync('chmod +x ' + tempFilePath)
+            execSync('chmod +x ' + tempFilePath)
         } catch (err) {
             console.error('Could not make the script tempfile executable because of:')
             console.error(err)
@@ -95,7 +93,7 @@ function executeScript(script, args) {
         child.stdout.pipe(process.stdout);
         child.stderr.pipe(process.stderr);*/
 
-        var child = childProcess.spawn(tempFilePath, args, { stdio: 'inherit' })
+        const child = spawn(tempFilePath, args, { stdio: 'inherit' })
 
         child.on('exit', exitCode => process.exit(exitCode) )
 

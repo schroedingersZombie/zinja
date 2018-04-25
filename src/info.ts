@@ -1,22 +1,21 @@
-const columnify = require('columnify')
-const assertError = require('assert').ifError
-const cache = require('persistent-cache')
+import * as columnify from 'columnify'
+import { cache } from './persistent-cache'
+import { fetchScriptInfo, Script } from './api'
 
-const api = require('./api')
-const remoteCache = require('./remote-cache')
-const localScripts = require('./local-repository')
+import { remoteCache } from './remote-cache'
+import { localRepository } from './local-repository'
 
-function isLocalScript(name) {
-    return name.indexOf('/') == -1
+function isLocalScript(name: string) {
+    return !name.includes('/')
 }
 
 export function info(name) {
     if (isLocalScript(name))
-        return localScripts.get(name, onLocalCache)
+        return localRepository.get(name, onLocalCache)
 
-    return api.fetchScriptInfo(name, onResponse)
+    return fetchScriptInfo(name, onResponse)
 
-    function onResponse(scriptInfo) {
+    function onResponse(scriptInfo: Script) {
         outputScriptInfo({
             'Name:': scriptInfo.name,
             'Author:': scriptInfo.user,
@@ -33,22 +32,23 @@ export function info(name) {
             process.exit(1)
         }
 
-        if (script == undefined) {
+        if (script === undefined) {
             console.error('Script ' + name + ' was not found in the local repository')
             process.exit(1)
         }
 
-        outputScriptInfo({
-            'Name:': name,
-            'Source:': 'Local Repository',
-        }, {
-            script: script,
-        })
+        outputScriptInfo(
+            {
+                'Name:': name,
+                'Source:': 'Local Repository',
+            },
+            { script },
+        )
     }
 }
 
 function outputScriptInfo(metadata, scriptInfo) {
-    var output = {
+    const output = {
         'Name:': scriptInfo.name,
         'Author:': scriptInfo.user,
     }

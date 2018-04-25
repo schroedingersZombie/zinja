@@ -27,8 +27,10 @@
     "columnify": "^1.5.4",
     "commander": "^2.15.1",
     "inquirer": "^5.2.0",
+    "mkdirp-no-bin": "^0.5.1",
     "promise": "^7.1.1",
     "request": "^2.85.0",
+    "rmdir": "^1.2.0",
     "temp": "^0.8.3",
     "typescript": "^2.8.3"
   }

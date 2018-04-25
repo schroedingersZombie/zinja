@@ -1,11 +1,11 @@
-const cache = require('persistent-cache')
-const columns = require('cli-columns')
+import { cache } from './persistent-cache'
+import * as columns from 'cli-columns'
 
-const localScripts = require('./local-repository')
+import { localRepository } from './local-repository'
 
 export function listLocal() {
-    localScripts.keys(function(err, keys) {
-        if (keys.length == 0)
+    localRepository.keys((err, keys) => {
+        if (keys.length === 0)
             return console.log('You have no scripts in your local respository')
 
         console.log(columns(keys))

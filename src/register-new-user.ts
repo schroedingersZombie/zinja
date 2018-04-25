@@ -1,6 +1,5 @@
-const inquirer = require('inquirer')
-
-const api = require('./api')
+import * as inquirer from 'inquirer'
+import { postUser } from './api'
 
 export async function registerNewUser() {
     const answers = await inquirer.prompt([{
@@ -11,7 +10,7 @@ export async function registerNewUser() {
             message: 'Password:',
             name: 'password',
             type: 'password',
-            validate: function(value) {
+            validate: value => {
                 if (value.length < 8)
                     return 'Password must have at least 8 characters'
 
@@ -24,25 +23,23 @@ export async function registerNewUser() {
             message: 'Repeat password:',
             name: 'password',
             type: 'password',
-            validate: function(value, answers) {
-                return value == answers.password || 'Password repeat and password do not match'
-            },
+            validate: (value, currentAnswers) =>
+                value === currentAnswers.password || 'Password repeat and password do not match',
         }, {
             message: 'E-Mail (used only to recover your account):',
             name: 'email',
             type: 'input',
-            validate: function(value) {
-                return /^\S+@\S+$/.test(value) || 'Please enter a valid e-mail address'
-            },
-        }]
+            validate: value => /^\S+@\S+$/.test(value) || 'Please enter a valid e-mail address',
+        }],
     )
 
-    api.postUser({
+    postUser(
+        {
             username: answers.user,
             password: answers.password,
             email: answers.email,
         },
-        onResponse
+        onResponse,
     )
 
     function onResponse() {

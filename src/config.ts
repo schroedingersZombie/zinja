@@ -1,7 +1,11 @@
 const HOST = 'https://api.zinja.io'
 
-function getUserHome() {
-    return process.env[(process.platform == 'win32') ? 'USERPROFILE' : 'HOME']
+export function getUserHome() {
+    return process.env[
+        process.platform === 'win32'
+            ? 'USERPROFILE'
+            : 'HOME'
+    ]
 }
 
 export const config = {

@@ -1,7 +1,7 @@
-const api = require('./api')
+import { fetchRemoteScript } from './api'
 
 export function install(name) {
-    api.fetchRemoteScript(name, onFetched)
+    fetchRemoteScript(name, onFetched)
 
     function onFetched(script) {
         require('./register')(

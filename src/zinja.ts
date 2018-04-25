@@ -10,6 +10,15 @@ import { onConnectionProblem } from './connection-problem'
 import { deleteScript, patchScript, postScript, ScriptPatch, Credentials, Script } from './api'
 import { config } from './config'
 import { remoteCache } from './remote-cache'
+import { register } from './register'
+import { execute } from './execute'
+import { listLocal } from './list-local'
+import { unregister } from './unregister'
+import { search } from './search'
+import { info } from './info'
+import { install } from './install'
+import { registerNewUser } from './register-new-user'
+import { clearCache } from './clear-cache'
 
 const scriptsEndpoint = config.api.scripts
 const loginEndpoint = config.api.login
@@ -103,19 +112,13 @@ function toBeImplemented() {
 if (!process.argv.slice(2).length)
     program.outputHelp()
 
-function register(name, fileName, options) {
-    require('./register')(name, fileName, options)
+interface PublishOptions {
+    string?: boolean
+    name?: string
+    desc?: string
 }
 
-function unregister(name) {
-    require('./unregister')(name)
-}
-
-function clearCache() {
-    require('./clear-cache')()
-}
-
-async function publish(fileName, options) {
+async function publish(fileName: string, options: PublishOptions) {
     // console.dir(fileName);
     // for(var i in options) console.log(i);
     // process.exit(0);
@@ -130,7 +133,7 @@ async function publish(fileName, options) {
                 if (!name.match(SCRIPT_NAME_REGEX))
                     return 'Invalid name. Script names can only contain lowercase letters, numbers and dashes and must begin with a letter'
 
-                if (name.length > 60 || name.length == 0)
+                if (name.length > 60 || name.length === 0)
                     return 'Name must be between 1 and 60 characters long'
 
                 return true
@@ -140,13 +143,13 @@ async function publish(fileName, options) {
             message: 'Do you want to add a description to explain how to use the script?',
             name: 'addDescription',
             type: 'confirm',
-            when: () => options.desc == undefined,
+            when: () => options.desc === undefined,
         }, {
             message: 'Enter the description (your default editor is used)',
             name: 'description',
             type: 'editor',
-            when: answers => !!answers.addDescription,
-        }
+            when: currentAnswers => !!currentAnswers.addDescription,
+        },
     ])
 
     answers.creds = creds
@@ -159,7 +162,6 @@ async function publish(fileName, options) {
         onFileRead(null, fileName)
     else
         readFile(fileName, 'utf8', onFileRead)
-
 
     function onFileRead(err, content) {
         if (err != null) {
@@ -245,22 +247,6 @@ async function askForPatch(name: string, patch: ScriptPatch, credentials: Creden
         return patchScript(name, patch, credentials, () => { console.log('Script has been updated successfully') })
 }
 
-function execute(args) {
-    require('./execute')()
-}
-
-function info(name) {
-    require('./info')(name)
-}
-
-function search(query) {
-    require('./search')(query)
-}
-
-function install(name) {
-    require('./install')(name)
-}
-
 async function getCredentials(): Promise<Credentials> {
     let creds: Credentials
 
@@ -278,7 +264,7 @@ async function getCredentials(): Promise<Credentials> {
 async function askForCredentials(saveWithoutAsking = false): Promise<Credentials> {
     console.log('Enter your credentials (if you do not have an account yet, run zj register-new-user)')
 
-    //TODO: Ask to save credentials
+    // TODO: Ask to save credentials
 
     const creds = await inquirer.prompt([ {
             message: 'Username:',
@@ -312,10 +298,10 @@ async function login() {
             method: 'GET',
             auth: creds,
         },
-        onResponse
+        onResponse,
     )
 
-    function onResponse(err, response) {
+    function onResponse(err, response: request.RequestResponse) {
         if (err)
             return onConnectionProblem()
 
@@ -353,28 +339,17 @@ function deleteStoredCredentials(cb = assertError) {
     settings.delete(CREDENDTIALS_KEY, cb)
 }
 
-function registerNewUser() {
-    require('./register-new-user')()
-}
-
-function listLocal() {
-    require('./list-local')()
-}
-
 function getStoredCredentials(): Promise<Credentials> {
-    return new Promise(function(resolve, reject) {
-        settings.get(CREDENDTIALS_KEY, function(err, credentials) {
+    return new Promise((resolve, reject) => {
+        settings.get(CREDENDTIALS_KEY, (err, credentials) => {
             if (!credentials)
                 return reject()
 
-            var split = credentials.split(':')
-            var user = split[0]
-            var password = split.slice(1).join('')
+            const split = credentials.split(':')
+            const user = split[0]
+            const password = split.slice(1).join('')
 
-            resolve({
-                user: user,
-                password: password,
-            })
+            resolve({ user, password })
         })
     })
 }

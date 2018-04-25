@@ -1,11 +1,11 @@
-const cache = require('persistent-cache')
-const assertError = require('assert').ifError
+import { cache } from './persistent-cache'
+import { ifError } from 'assert'
 
-const remoteCache = require('./remote-cache')
+import { remoteCache } from './remote-cache'
 
 export function clearCache() {
-    remoteCache.unlink(err => {
-        assertError(err)
+    remoteCache.unlink((err) => {
+        ifError(err)
 
         console.log('Cache cleared')
     })
