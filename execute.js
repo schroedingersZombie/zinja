@@ -71,7 +71,7 @@ function executeScript(script, args) {
 
     temp.open('zinja', function tempFileCreated(err, tmpFile) {
         tempFilePath = tmpFile.path
-        fs.write(tmpFile.fd, script, onFileWritten)
+        fs.writeFile(tempFilePath, script, onFileWritten)
     })
 
     function onFileWritten(err) {
