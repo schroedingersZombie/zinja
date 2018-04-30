@@ -67,12 +67,8 @@ function execute() {
 }
 
 function executeScript(script, args) {
-    var tempFilePath = ''
-
-    temp.open('zinja', function tempFileCreated(err, tmpFile) {
-        tempFilePath = tmpFile.path
-        fs.writeFile(tempFilePath, script, onFileWritten)
-    })
+    const tempFilePath = temp.path('zinja')
+    fs.writeFile(tempFilePath, script, onFileWritten)
 
     function onFileWritten(err) {
         if (err != null) {
