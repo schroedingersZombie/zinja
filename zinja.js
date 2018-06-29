@@ -63,6 +63,11 @@ program
     .action(info)
 
 program
+    .command('source <name>')
+    .description('Shows the source of the specified script')
+    .action(source)
+
+program
     .command('install <name>')
     .description('Registers the given remote script as local script')
     .action(install)
@@ -258,6 +263,10 @@ function execute(args) {
 
 function info(name) {
     require('./info')(name)
+}
+
+function source(name) {
+    require('./source')(name)
 }
 
 function search(query) {
