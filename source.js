@@ -1,5 +1,3 @@
-const columnify = require('columnify')
-const assertError = require('assert').ifError
 const cache = require('persistent-cache')
 
 const api = require('./api')
